@@ -67,8 +67,9 @@ class RecordRequest(BaseModel):
 
 
 class LiveAnalyzeRequest(BaseModel):
-    service: str = Field(min_length=1, max_length=160)
-    symptoms: str = Field(min_length=8, max_length=4000)
+    incident_id: str = Field(default="", max_length=80)
+    service: str = Field(default="", max_length=160)
+    symptoms: str = Field(default="", max_length=4000)
     recent_changes: str = Field(default="Not provided", max_length=2000)
     constraints: str = Field(default="None provided", max_length=2000)
 
@@ -90,6 +91,8 @@ class ApprovedHistoryRequest(BaseModel):
 
 class LiveRecordRequest(LiveAnalyzeRequest):
     incident_id: str = Field(min_length=3, max_length=80)
+    service: str = Field(min_length=1, max_length=160)
+    symptoms: str = Field(min_length=8, max_length=4000)
     severity: str = Field(min_length=2, max_length=30)
     root_cause: str = Field(min_length=2, max_length=2000)
     resolution: str = Field(min_length=8, max_length=4000)
@@ -254,6 +257,7 @@ async def analyze_incident(payload: AnalyzeRequest) -> dict[str, str]:
         memories = await arecall_incidents(
             RecallIncidentsInput(
                 query=(
+                    f"Incident reference: {payload.incident_id or 'not provided'}\n"
                     f"Service: {payload.service}\nSymptoms: {payload.symptoms}\n"
                     f"Recent changes: {payload.recent_changes}"
                 )
@@ -283,7 +287,7 @@ async def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object
         memories = await arecall_incidents(
             RecallIncidentsInput(
                 query=(
-                    f"Service: {payload.service}\nSymptoms: {payload.symptoms}\n"
+                    f"Service: {payload.service or 'not provided'}\nSymptoms: {payload.symptoms or 'not provided'}\n"
                     f"Recent changes: {payload.recent_changes}"
                 )
             ),
@@ -295,7 +299,8 @@ async def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object
             matches = [item.split(": ", 1)[1] for item in memories.split("\n\n") if ": " in item]
 
         context = (
-            f"Affected service: {payload.service}\nObserved symptoms: {payload.symptoms}\n"
+            f"Incident reference: {payload.incident_id or 'not provided'}\n"
+            f"Affected service: {payload.service or 'not provided'}\nObserved symptoms: {payload.symptoms or 'not provided'}\n"
             f"Recent changes: {payload.recent_changes}\nDo-not-cross constraints: {payload.constraints}\n"
             f"Relevant operator-confirmed history, if any: {memories}"
         )
@@ -312,8 +317,13 @@ async def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object
                 "operator approves it. If history does not support a fix, label any possible "
                 "fix as a hypothesis, or say no safe fix can be suggested yet. Never claim "
                 "you changed a system. "
-                "Do not recommend destructive actions, production writes, or a restart as a "
-                "first step. Keep the full answer under 150 words."
+                "If the operator provided only an incident reference and no service or symptoms, "
+                "say that the reference can only be matched against saved team history here; "
+                "do not infer current status, affected systems, causes, or fixes from the ID. "
+                "If no saved match exists, ask for one useful detail (affected service or what "
+                "people are experiencing) and give at most two safe ways to find it, such as "
+                "checking the incident summary or alert. Do not recommend destructive actions, "
+                "production writes, or a restart as a first step. Keep the full answer under 150 words."
             ),
             context=context,
             budget="mid",
@@ -327,7 +337,9 @@ async def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object
                 "that changes production), and 'Unknowns to confirm'. Catch steps that "
                 "could lose data, widen impact, or repeat a historical fix without verifying "
                 "it applies. If Rock's advice is cautious, say that. Do not invent access or "
-                "claim to have executed any action. Keep the answer under 100 words.\n\n"
+                "claim to have executed any action. If the responder only has an incident ID, "
+                "state that current impact and affected service remain unknown until checked. "
+                "Keep the answer under 100 words.\n\n"
                 f"Rock's investigation: {investigation}"
             ),
             context=context,
@@ -337,8 +349,13 @@ async def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object
             "matches": matches[:2],
             "match_count": len(matches[:2]),
             "history_summary": (
-                "These are saved, operator-confirmed incidents from your team."
-                if matches else "No team incidents have been saved yet. This review uses only the details you entered."
+                f"Echo found saved team history to compare with {payload.incident_id}. Verify that it describes this incident."
+                if matches and payload.incident_id
+                else "These are saved, operator-confirmed incidents from your team."
+                if matches
+                else f"No saved team case matched {payload.incident_id}. The ID alone does not reveal live incident details."
+                if payload.incident_id
+                else "No team incidents have been saved yet. This review uses only the details you entered."
             ),
             "investigation": investigation,
             "safety_review": safety_review,
