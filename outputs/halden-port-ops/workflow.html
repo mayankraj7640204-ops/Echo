@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#8fd5f1">
+  <meta name="description" content="A plain-language walkthrough of how Echo helps incident teams find past fixes and learn from verified outcomes.">
+  <title>How Echo works — Incident response</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap">
+  <style>
+    :root { --ink:#0b1d3a; --muted:#315c7c; --blue:#8fd5f1; --cream:#fbf6ef; --line:rgb(11 29 58 / .16); --ease:cubic-bezier(.22,.7,.2,1); }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body { min-width:320px; color:var(--ink); background:var(--cream); font-family:"Inter Tight",system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:inherit; text-decoration:none; }
+    .topbar { position:sticky; z-index:5; top:16px; width:min(calc(100% - 2 * clamp(20px,5.7vw,82px)),1440px); height:60px; margin:16px auto -76px; padding:0 12px 0 22px; border-radius:999px; display:flex; align-items:center; justify-content:space-between; background:rgb(255 255 255 / .95); box-shadow:0 10px 30px -18px rgb(11 29 58 / .24); backdrop-filter:blur(16px); }
+    .brand { display:flex; align-items:center; gap:9px; font-size:17px; font-weight:600; letter-spacing:-.03em; }
+    .brand-mark { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; background:#5b7cf0; color:#fff; font-size:16px; }
+    .back { padding:12px 17px; border-radius:999px; font-size:14px; font-weight:500; }
+    .back:hover { background:rgb(11 29 58 / .08); }
+    .intro { padding:clamp(145px,20vh,210px) clamp(22px,7vw,100px) 64px; background:var(--blue); background-image:radial-gradient(circle,rgba(255,255,255,.42) 1.5px,transparent 2px); background-size:72px 58px; }
+    .intro-inner,.content { width:min(100%,1120px); margin:auto; }
+    .eyebrow { margin-bottom:18px; color:#315c7c; font-size:12px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { max-width:11em; font-size:clamp(48px,8vw,108px); font-weight:500; line-height:.92; letter-spacing:-.055em; }
+    .intro-copy { max-width:40em; margin-top:22px; color:rgb(11 29 58 / .76); font-size:clamp(17px,1.6vw,21px); line-height:1.45; }
+    .source-note { max-width:1120px; margin:28px auto 0; padding:17px 20px; border:1px solid rgb(11 29 58 / .15); border-radius:10px; background:rgb(255 255 255 / .45); color:rgb(11 29 58 / .78); font-size:14px; line-height:1.45; }
+    .source-note strong { color:var(--ink); }
+    .walkthrough { padding:72px clamp(22px,7vw,100px) 85px; }
+    .walkthrough h2 { margin-bottom:10px; font-size:clamp(32px,4vw,52px); font-weight:400; line-height:1.03; letter-spacing:-.045em; }
+    .section-copy { max-width:43em; color:rgb(11 29 58 / .7); font-size:16px; line-height:1.45; }
+    .steps { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-top:34px; }
+    .step { position:relative; padding:24px; border:1px solid var(--line); border-radius:13px; background:#fff; opacity:0; translate:0 16px; transition:opacity .55s var(--ease),translate .55s var(--ease); }
+    .step.visible { opacity:1; translate:0 0; }
+    .step-head { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .number { width:34px; height:34px; flex:none; display:grid; place-items:center; border-radius:50%; background:#d9f0f8; color:var(--muted); font-size:12px; font-weight:600; }
+    .step h3 { font-size:22px; font-weight:500; letter-spacing:-.025em; }
+    .step p { color:rgb(11 29 58 / .72); font-size:15px; line-height:1.45; }
+    .quote { margin-top:14px; padding:15px 16px; border-left:3px solid #5b7cf0; border-radius:0 8px 8px 0; background:#f3f8fa; color:var(--ink); font-size:15px; line-height:1.5; }
+    .quote-label { display:block; margin-bottom:6px; color:#52748c; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; }
+    .problem { margin-top:28px; padding:22px 24px; border-radius:12px; background:#eaf5f8; }
+    .problem h3 { margin-bottom:8px; font-size:18px; font-weight:600; }
+    .problem p { max-width:58em; color:rgb(11 29 58 / .76); font-size:15px; line-height:1.5; }
+    .live-cta { margin-top:40px; padding:30px; border-radius:14px; display:flex; align-items:center; justify-content:space-between; gap:24px; background:var(--ink); color:#fff; }
+    .live-cta h3 { margin-bottom:7px; font-size:22px; font-weight:500; }
+    .live-cta p { max-width:42em; color:rgb(255 255 255 / .72); font-size:14px; line-height:1.45; }
+    .button { flex:none; display:inline-flex; min-height:46px; align-items:center; justify-content:center; padding:0 18px; border:1px solid rgb(255 255 255 / .7); border-radius:7px; font-size:14px; font-weight:500; transition:background .2s ease,color .2s ease; }
+    .button:hover { background:#fff; color:var(--ink); }
+    footer { padding:24px clamp(22px,7vw,100px); border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:18px; color:rgb(11 29 58 / .65); font-size:13px; }
+    @media(max-width:700px) {
+      .topbar { height:54px; padding-left:16px; }
+      .steps { grid-template-columns:1fr; gap:12px; }
+      .step { padding:19px; }
+      .live-cta { align-items:flex-start; flex-direction:column; padding:23px; }
+      footer { flex-direction:column; }
+    }
+    @media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition-duration:.01ms!important; } .step,.step.visible { opacity:1; translate:0 0; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Echo home"><span class="brand-mark" aria-hidden="true">e</span><span>Echo</span></a>
+    <a class="back" href="/">Back to Echo</a>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-inner">
+        <p class="eyebrow">How Echo works · Example walkthrough</p>
+        <h1 id="page-title">Help your team solve outages with less searching.</h1>
+        <p class="intro-copy">When a service stops working, teams lose time digging through old tickets, chats, and postmortems. Echo brings the closest past incident and its verified fix into one place—so responders can check the right things sooner and avoid repeating mistakes.</p>
+        <aside class="source-note"><strong>About this example:</strong> The incident and response below are fictional examples written for this walkthrough. They were not provided by you or your company. The demo memory bank contains four sample incident reports; Hindsight may break each report into smaller searchable facts, which is why the earlier screen showed so many lines.</aside>
+      </div>
+    </section>
+
+    <section class="walkthrough" aria-labelledby="steps-heading">
+      <div class="content">
+        <p class="eyebrow">A simple incident flow</p>
+        <h2 id="steps-heading">From a customer problem to a better next response.</h2>
+        <p class="section-copy">Here is a prepared example of what a responder could ask and how Echo could help. This walkthrough is written in advance; it does not send a request to Hindsight.</p>
+
+        <div class="steps">
+          <article class="step">
+            <div class="step-head"><span class="number">01</span><h3>Describe what people see</h3></div>
+            <p>A responder reports the service, the customer impact, and what changed recently.</p>
+            <div class="quote"><span class="quote-label">Example prompt</span>“Online checkout became very slow after this morning’s update. Some customers see an error. What should we check first?”</div>
+          </article>
+          <article class="step">
+            <div class="step-head"><span class="number">02</span><h3>Find a similar past case</h3></div>
+            <p>Echo searches the team’s incident history and brings back the closest matching case.</p>
+            <div class="quote"><span class="quote-label">Fictional example · INC-1042</span>A previous checkout slowdown followed an update. A repeated call to a slow tax service kept the service busy. Reverting that update restored checkout.</div>
+          </article>
+          <article class="step">
+            <div class="step-head"><span class="number">03</span><h3>Get plain next steps</h3></div>
+            <p>Echo explains what is known, what is only a possibility, and what the team can safely check.</p>
+            <div class="quote"><span class="quote-label">Example answer</span>“This looks similar to the earlier checkout issue, but the cause is not confirmed. Compare the latest update with the previous one and check whether a slow outside service is holding up checkout. Don’t restart the database or change customer data without approval.”</div>
+          </article>
+          <article class="step">
+            <div class="step-head"><span class="number">04</span><h3>Save only what is verified</h3></div>
+            <p>After the team confirms the cause and recovery, an operator can save the outcome and prevention step. The next response starts with better context.</p>
+            <div class="quote"><span class="quote-label">Human confirmation required</span>Echo never treats an old fix as permission to change a live system. The operator checks the resolution before it becomes a new memory.</div>
+          </article>
+        </div>
+
+        <div class="problem"><h3>What real problem does Echo solve?</h3><p>During an outage, important lessons are often buried in old documents and conversations. Echo helps the on-call team find relevant history quickly, understand what worked before, and keep the verified outcome for next time. To use it with a real team, the memory bank must first be populated with that team’s approved incident reports.</p></div>
+
+        <div class="live-cta"><div><h3>Want to try the working demo?</h3><p>The live form sends your incident details to Hindsight and searches the four fictional sample reports. It does not have your company’s incident history unless you add it.</p></div><a class="button" href="/#try-echo">Try a live demo <span aria-hidden="true">↗</span></a></div>
+      </div>
+    </section>
+  </main>
+  <footer><span>Echo · Incident response memory copilot</span><a href="/">Return to the home page</a></footer>
+  <script>
+    (() => {
+      const steps = Array.from(document.querySelectorAll(".step"));
+      const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+      requestAnimationFrame(() => steps.forEach((step, index) => {
+        setTimeout(() => step.classList.add("visible"), reducedMotion.matches ? 0 : index * 100);
+      }));
+    })();
+  </script>
+</body>
+</html>

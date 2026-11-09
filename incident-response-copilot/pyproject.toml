@@ -1,0 +1,16 @@
+[project]
+name = "incident-response-copilot"
+version = "0.1.0"
+description = "A Band.ai incident response agent with persistent Hindsight memory"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "band-sdk[codex]>=6.0.1",
+    "certifi",
+    "fastapi>=0.115.0",
+    "hindsight-client",
+    "python-dotenv>=1.0.0",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[tool.setuptools]
+py-modules = ["incident_agent", "setup_memory", "seed_demo_data", "web_api"]

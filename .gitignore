@@ -1,0 +1,24 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+**/agent_config.yaml
+
+# Python environments and generated files
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+**/*.log
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+
+# Scratch examples created while building the project
+work/

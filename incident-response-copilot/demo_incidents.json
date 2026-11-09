@@ -1,0 +1,38 @@
+[
+  {
+    "incident_id": "INC-1042",
+    "service": "checkout-api",
+    "severity": "SEV-2",
+    "symptoms": "p95 latency rose from 180 ms to 4.8 s after a deploy; intermittent 502s; database connection pool saturated",
+    "root_cause": "A new retry loop held database connections while waiting on a downstream tax service",
+    "resolution": "Rolled back release 2026.10.14.2 and confirmed p95 returned below 250 ms; capped retries in the follow-up release",
+    "prevention": "Add a connection-pool saturation alert and a load test for downstream timeouts"
+  },
+  {
+    "incident_id": "INC-0988",
+    "service": "checkout-api",
+    "severity": "SEV-3",
+    "symptoms": "Checkout requests timed out during a traffic spike; database CPU remained normal; pool usage climbed steadily",
+    "root_cause": "A report query used the transactional connection pool and held connections for several seconds",
+    "resolution": "Moved the report query to the read replica and verified checkout timeout rate dropped to baseline",
+    "prevention": "Separate analytical and transactional connection pools"
+  },
+  {
+    "incident_id": "INC-1107",
+    "service": "payments-worker",
+    "severity": "SEV-2",
+    "symptoms": "Queue age exceeded 20 minutes after a provider slowdown; retries increased; no duplicate charges observed",
+    "root_cause": "Unbounded retries amplified provider latency and delayed healthy jobs",
+    "resolution": "Applied exponential backoff with a retry cap and drained the queue at a controlled rate",
+    "prevention": "Alert on retry volume and queue age; add a provider circuit breaker"
+  },
+  {
+    "incident_id": "INC-1163",
+    "service": "catalog-search",
+    "severity": "SEV-3",
+    "symptoms": "Search returned stale inventory for one region after an index refresh; writes were healthy",
+    "root_cause": "The regional index refresh completed before the inventory event consumer caught up",
+    "resolution": "Replayed the consumer offset for the affected region and verified inventory parity",
+    "prevention": "Gate index promotion on consumer lag reaching zero"
+  }
+]

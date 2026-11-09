@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#8ed4ed">
+  <title>Echo response workspace</title>
+  <style>
+    :root{--ink:#0b1d3b;--blue:#8ed4ed;--blue-deep:#397bf5;--paper:#f8f5ef;--muted:#5c6c82;--line:#d9e0e8;--white:#fff;--navy:#0c1d3a;--green:#31d5c7}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Inter,"Arial",sans-serif}
+    .top{background:var(--blue);padding:18px max(24px,calc((100vw - 1360px)/2)) 54px;min-height:265px}
+    .nav{height:68px;max-width:1360px;margin:auto;padding:0 22px;background:rgba(255,255,255,.94);border-radius:50px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 12px 35px #26537412}
+    .brand{display:flex;align-items:center;gap:12px;color:var(--ink);font-size:20px;font-weight:650;text-decoration:none}.brand-mark{height:34px;width:34px;border-radius:50%;display:grid;place-items:center;background:#5e7df4;color:white;font-weight:700;font-size:20px}.back{color:var(--ink);text-decoration:none;font-weight:600}
+    .intro{max-width:1120px;margin:46px auto 0}.eyebrow{margin:0 0 10px;color:#234a68;text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:700}.intro h1{margin:0;max-width:850px;font-size:clamp(34px,5vw,58px);line-height:1.03;letter-spacing:-.045em;font-weight:550}.intro p{max-width:740px;margin:15px 0 0;color:#183c57;font-size:17px}
+    main{max-width:1120px;margin:-25px auto 70px;padding:0 24px}.notice{border:1px solid #b4d3df;background:#f2fbff;border-radius:14px;padding:15px 18px;margin:0 0 20px;color:#344d65;font-size:14px}.notice strong{color:var(--ink)}.layout{display:grid;grid-template-columns:minmax(320px,.9fr) minmax(400px,1.1fr);gap:20px;align-items:start}
+    .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 10px 30px #132a4209}.card h2{font-size:22px;line-height:1.2;margin:0 0 7px;letter-spacing:-.025em}.sub{margin:0 0 22px;color:var(--muted);font-size:14px}
+    .field{margin:0 0 16px}.field label{display:block;margin:0 0 7px;font-size:14px;font-weight:650}.field small{display:block;margin-top:5px;color:#738093;font-size:12px}.field input,.field textarea,.field select{width:100%;border:1px solid #cbd4df;border-radius:9px;padding:12px 13px;color:var(--ink);background:white;font:inherit;outline:none}.field textarea{min-height:112px;resize:vertical}.field input:focus,.field textarea:focus,.field select:focus{border-color:#5484ec;box-shadow:0 0 0 3px #5484ec20}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.primary{border:0;background:var(--navy);color:white;border-radius:10px;padding:13px 18px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:transform .15s,background .15s}.primary:hover{background:#17345e;transform:translateY(-1px)}.primary:disabled{opacity:.65;cursor:wait;transform:none}.status{min-height:22px;color:#38688a;font-size:13px;margin:12px 0 0}
+    .results{min-height:370px}.empty{display:grid;place-items:center;text-align:center;min-height:310px;padding:30px;color:var(--muted)}.empty-icon{height:52px;width:52px;border-radius:16px;background:#eaf7fb;display:grid;place-items:center;margin:0 auto 14px;color:#317ba0;font-size:23px}.empty h3{margin:0 0 7px;color:var(--ink);font-size:18px}.empty p{max-width:350px;margin:0;font-size:14px}
+    .team{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}.agent{padding:15px;border-radius:12px;background:#f4f8fa;border:1px solid #e2e9ef}.agent-head{display:flex;align-items:center;gap:9px;font-weight:700}.agent-icon{width:30px;height:30px;display:grid;place-items:center;background:white;border:1px solid var(--line);border-radius:9px}.agent p{font-size:13px;color:#455971;margin:10px 0 0;white-space:pre-wrap}.block{padding:15px 0;border-top:1px solid var(--line)}.block h3{font-size:15px;margin:0 0 8px}.match{background:#f3f8fa;padding:13px 14px;margin:9px 0;border-radius:10px;color:#455971;font-size:13px}.match strong{color:var(--ink)}.label{display:inline-flex;padding:4px 8px;border-radius:20px;background:#e8f6ef;color:#286a4f;font-size:11px;font-weight:700;margin-bottom:8px}.warning{font-size:13px;color:#6b5a38;background:#fbf7ec;padding:12px 14px;border-radius:10px;margin-top:12px}
+    .save{margin-top:20px;border-top:1px solid var(--line);padding-top:20px}.save summary{font-weight:700;cursor:pointer}.save-body{padding-top:18px}.check{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:#43556a;margin:12px 0 16px}.check input{margin-top:3px}.footer{border-top:1px solid var(--line);padding:22px max(24px,calc((100vw - 1360px)/2));display:flex;justify-content:space-between;color:#69798d;font-size:13px}.footer a{color:inherit;text-decoration:none}
+    @media(max-width:800px){.layout{grid-template-columns:1fr}.top{padding-bottom:48px}.intro{margin-top:36px}.grid2{grid-template-columns:1fr}.results{min-height:280px}.empty{min-height:240px}}
+    @media(max-width:520px){.nav{height:58px;padding:0 16px}.brand{font-size:17px}.intro h1{font-size:39px}.intro p{font-size:15px}.card{padding:18px}.team{grid-template-columns:1fr}.footer{gap:12px;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <nav class="nav" aria-label="Main navigation"><a class="brand" href="/" aria-label="Echo home"><span class="brand-mark">e</span>Echo</a><a class="back" href="/">Back to Echo</a></nav>
+    <div class="intro"><p class="eyebrow">Echo response workspace</p><h1>Make the next incident easier to handle.</h1><p>Describe what is going wrong. Echo searches your team’s saved incidents, then Rock looks for a likely cause or proven fix while Salt checks the advice for safety.</p></div>
+  </header>
+  <main>
+    <aside class="notice"><strong>For real incidents:</strong> this workspace uses a separate, initially empty Hindsight memory. It learns only from outcomes your team confirms and saves. Echo can investigate and suggest checks; it cannot access or change your production systems. Avoid entering passwords, customer data, or secrets.</aside>
+    <div class="layout">
+      <form class="card" id="incident-form">
+        <h2>Tell us what is happening</h2><p class="sub">A few details help Echo find relevant history and avoid unsafe advice.</p>
+        <div class="field"><label for="service">Affected service</label><input id="service" name="service" placeholder="For example, online checkout" required maxlength="160"></div>
+        <div class="field"><label for="symptoms">What are people experiencing?</label><textarea id="symptoms" name="symptoms" placeholder="Describe the error, delay, or outage and who is affected." required minlength="8" maxlength="4000"></textarea><small>Include the exact error text if available. Do not include secrets or personal data.</small></div>
+        <div class="field"><label for="recent_changes">What changed shortly before this began?</label><textarea id="recent_changes" name="recent_changes" placeholder="A release, configuration change, traffic increase, or “not sure”" maxlength="2000"></textarea></div>
+        <div class="field"><label for="constraints">What must not be changed?</label><textarea id="constraints" name="constraints" placeholder="For example: no database restart; no customer data edits without approval." maxlength="2000"></textarea></div>
+        <button class="primary" id="analyze" type="submit">Investigate this incident</button><p class="status" id="status" role="status" aria-live="polite">Your description is sent to Hindsight to find useful history and prepare a response.</p>
+      </form>
+      <section class="card results" id="results" aria-live="polite">
+        <div class="empty" id="empty"><div><div class="empty-icon">✳</div><h3>Your response plan will appear here</h3><p>Echo will show what it found, what may be happening, and safe checks to do next. A suggested fix is never run automatically.</p></div></div>
+        <div id="result-body" hidden>
+          <span class="label" id="history-label">Live incident review</span><h2>What Echo found</h2><p class="sub" id="history-summary"></p>
+          <div class="block"><h3>Related incidents your team saved</h3><div id="matches"></div></div>
+          <div class="team">
+            <article class="agent"><div class="agent-head"><span class="agent-icon">R</span>Rock · Investigator</div><p id="rock-result"></p></article>
+            <article class="agent"><div class="agent-head"><span class="agent-icon">S</span>Salt · Safety review</div><p id="salt-result"></p></article>
+          </div>
+          <div class="warning">Echo never applies a fix. Verify the evidence with your incident lead and current system data; get approval before making a production change.</div>
+          <details class="save"><summary>Save the confirmed outcome for next time</summary>
+            <form class="save-body" id="save-form">
+              <div class="grid2"><div class="field"><label for="incident_id">Incident reference</label><input id="incident_id" name="incident_id" required maxlength="80" placeholder="Your team’s incident ID"></div><div class="field"><label for="severity">How serious was it?</label><select id="severity" name="severity"><option>Not sure yet</option><option>Critical</option><option>High</option><option>Moderate</option><option>Low</option></select></div></div>
+              <div class="field"><label for="root_cause">What did the team confirm caused it?</label><textarea id="root_cause" name="root_cause" required minlength="2" maxlength="2000" placeholder="Only enter a confirmed cause. Write “unknown” if not confirmed."></textarea></div>
+              <div class="field"><label for="resolution">What fixed it, and how did you confirm recovery?</label><textarea id="resolution" name="resolution" required minlength="8" maxlength="4000"></textarea></div>
+              <div class="field"><label for="prevention">What should change to reduce the chance of this happening again?</label><textarea id="prevention" name="prevention" required minlength="4" maxlength="2000"></textarea></div>
+              <label class="check"><input id="confirmed" type="checkbox" required><span>I confirm the incident team verified this outcome and it is approved to save for future incident searches.</span></label>
+              <button class="primary" id="save-button" type="submit">Save team-confirmed lesson</button><p class="status" id="save-status" role="status" aria-live="polite"></p>
+            </form>
+          </details>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer class="footer"><span>Echo · Incident response workspace</span><a href="/">Return to the home page</a></footer>
+  <script>
+    const form=document.getElementById('incident-form'),button=document.getElementById('analyze'),status=document.getElementById('status');let current=null;
+    form.addEventListener('submit',async e=>{e.preventDefault();current=Object.fromEntries(new FormData(form));button.disabled=true;button.textContent='Rock and Salt are reviewing…';status.textContent='Searching your team’s saved incidents and preparing a careful response.';
+      try{const r=await fetch('/api/live/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(current)});const data=await r.json();if(!r.ok)throw Error(data.detail||'Echo could not finish the review.');
+        document.getElementById('empty').hidden=true;document.getElementById('result-body').hidden=false;document.getElementById('history-label').textContent=data.match_count?`${data.match_count} related case${data.match_count===1?'':'s'} found`:'First case in your team memory';document.getElementById('history-summary').textContent=data.history_summary;document.getElementById('rock-result').textContent=data.investigation;document.getElementById('salt-result').textContent=data.safety_review;
+        document.getElementById('matches').innerHTML=data.matches.length?data.matches.map((m,i)=>`<div class="match"><strong>Past case ${i+1}</strong><br>${escapeHtml(m)}</div>`).join(''):'<div class="match">No earlier team cases match yet. Echo will use the details you provided to prepare cautious checks; saved verified outcomes can help with future incidents.</div>';
+        status.textContent='Review ready. Rock investigated; Salt checked the suggestions for safety.';
+      }catch(err){status.textContent=err instanceof TypeError?'Could not reach Echo. Make sure the local server is running.':err.message;}finally{button.disabled=false;button.textContent='Investigate this incident';}});
+    document.getElementById('save-form').addEventListener('submit',async e=>{e.preventDefault();if(!current)return;const save=document.getElementById('save-button'),s=document.getElementById('save-status');save.disabled=true;s.textContent='Saving the approved outcome…';const p={...current,...Object.fromEntries(new FormData(e.currentTarget)),operator_confirmed:document.getElementById('confirmed').checked};
+      try{const r=await fetch('/api/live/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});const data=await r.json();if(!r.ok)throw Error(data.detail||'The outcome could not be saved.');s.textContent=data.message;}catch(err){s.textContent=err instanceof TypeError?'Could not reach Echo. Make sure the local server is running.':err.message;}finally{save.disabled=false;}});
+    function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  </script>
+</body>
+</html>
