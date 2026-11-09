@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from pathlib import Path
-from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -36,13 +36,7 @@ from incident_agent import (  # noqa: E402
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("echo.web")
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
-    yield
-    await hindsight.aclose()
-
-
-app = FastAPI(title="Echo Incident Response", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="Echo Incident Response", version="0.2.0")
 
 
 class AnalyzeRequest(BaseModel):
@@ -82,6 +76,46 @@ class LiveRecordRequest(LiveAnalyzeRequest):
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ready", "service": "echo-incident-demo"}
+
+
+@app.get("/api/live/dashboard")
+def live_dashboard_summary() -> dict[str, object]:
+    """Show real, minimal counts from the separate operator-confirmed bank."""
+    try:
+        page = hindsight.list_memories(bank_id=LIVE_BANK_ID, limit=200, offset=0)
+        cases: dict[str, dict[str, str]] = {}
+        for item in page.items:
+            metadata = item.metadata or {}
+            text = item.text or ""
+            found = metadata.get("incident_id") or metadata.get("Incident ID")
+            if not found:
+                match = re.search(r"\bIncident ID:\s*([A-Z0-9][A-Z0-9._/-]{1,79})", text, re.IGNORECASE)
+                found = match.group(1) if match else None
+            if not found:
+                continue
+            key = str(found).strip().upper()
+            cases.setdefault(
+                key,
+                {
+                    "incident_id": key,
+                    "service": str(metadata.get("service") or "Service details saved"),
+                    "severity": str(metadata.get("severity") or "Verified outcome"),
+                    "updated_at": str(item.updated_at or item.var_date or ""),
+                },
+            )
+        return {
+            "bank_status": "ready",
+            "searchable_memory_facts": page.total,
+            "verified_case_count": len(cases),
+            "recent_cases": sorted(cases.values(), key=lambda case: case["updated_at"], reverse=True)[:5],
+            "history_is_empty": page.total == 0,
+        }
+    except Exception as exc:
+        logger.exception("Loading live dashboard summary failed")
+        raise HTTPException(
+            status_code=502,
+            detail="Echo could not load your team memory right now. Please refresh and try again.",
+        ) from exc
 
 
 @app.post("/api/incident/analyze")
@@ -255,6 +289,11 @@ def home() -> FileResponse:
 @app.get("/workspace.html", include_in_schema=False)
 def workspace() -> FileResponse:
     return FileResponse(SITE_DIR / "workspace.html")
+
+
+@app.get("/dashboard.html", include_in_schema=False)
+def dashboard() -> FileResponse:
+    return FileResponse(SITE_DIR / "dashboard.html")
 
 
 app.mount("/", StaticFiles(directory=SITE_DIR), name="site")

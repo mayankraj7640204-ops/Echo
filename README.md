@@ -14,7 +14,7 @@ Echo is an incident response copilot. It searches approved incident history, pre
    .venv/bin/python web_api.py
    ```
 
-3. Open [http://127.0.0.1:8000](http://127.0.0.1:8000). “See the workflow” opens a prepared walkthrough; “Try a live demo” analyzes an incident against fictional sample cases; “Login” opens the separate incident response workspace.
+3. Open [http://127.0.0.1:8000](http://127.0.0.1:8000). “See the workflow” opens a prepared walkthrough; “Try a live demo” analyzes an incident against fictional sample cases; “Login” opens the command dashboard, with live Hindsight memory status and a link to the separate incident response workspace.
 
 The live workspace uses the separate `echo-live-incidents` Hindsight bank. It starts empty and learns only from operator-confirmed incidents. Echo does not connect to or change production systems. The workspace is a prototype and does not provide user authentication.
 

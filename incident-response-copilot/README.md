@@ -9,7 +9,7 @@ This MVP targets the hackathon's Engineering and DevOps incident response idea. 
 - After the operator confirms a resolution, the agent records the postmortem so the next similar incident starts with better context.
 - Historical actions are treated as precedent, not as authorization to repeat a risky change.
 
-The public interactive demo uses synthetic incidents in `hh3-incident-response`. The Login link opens a separate response workspace that uses the empty `echo-live-incidents` Hindsight bank. The live bank starts with no cases and learns only from outcomes explicitly confirmed and saved by an operator. Rock investigates; Salt independently reviews safety. These are two Hindsight-backed response roles in this web app; the separate Band.ai Rock and Salt examples remain Tom-and-Jerry roleplay agents and are not called by the web app. Echo does not connect to production systems or execute changes.
+The public interactive demo uses synthetic incidents in `hh3-incident-response`. The Login link opens a command dashboard backed by the separate `echo-live-incidents` Hindsight bank. It starts with no cases and learns only from outcomes explicitly confirmed and saved by an operator. From the dashboard, a responder can open the live incident workspace. Rock investigates; Salt independently reviews safety. These are two Hindsight-backed response roles in this web app; the separate Band.ai Rock and Salt examples remain Tom-and-Jerry roleplay agents and are not called by the web app. Echo does not connect to production systems or execute changes.
 
 ## Setup
 
@@ -27,7 +27,7 @@ The public interactive demo uses synthetic incidents in `hh3-incident-response`.
 
    Open http://127.0.0.1:8000. “See the workflow” opens a prepared, plain-language walkthrough using fictional example prompts and answers. “Try a live demo” takes you to the editable incident form, which sends the incident to Hindsight from the server. The API key stays in .env and is never sent to the browser. The demo bank contains four synthetic incidents, not company data. The save-resolution form writes to memory only after the operator checks the confirmation box.
 
-   The top “Login” link opens http://127.0.0.1:8000/workspace.html. This is an incident workspace, not user authentication. It searches only the separate `echo-live-incidents` bank. Add cases over time through the operator-confirmed save form; do not seed demo data into that bank. The page’s Rock and Salt names refer to two separate Hindsight-backed review roles, not the Band.ai roleplay agents.
+   The top “Login” link opens http://127.0.0.1:8000/dashboard.html. The dashboard reads live Hindsight memory counts and recent verified outcomes. Its incident workspace is http://127.0.0.1:8000/workspace.html. These pages are a prototype, not user authentication. They search only the separate `echo-live-incidents` bank. Add cases over time through the operator-confirmed save form; do not seed demo data into that bank. The page’s Rock and Salt names refer to two separate Hindsight-backed review roles, not the Band.ai roleplay agents.
 
 5. To use the Band.ai agent as well, start it in a second terminal:
 

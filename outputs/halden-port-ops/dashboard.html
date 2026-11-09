@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c1422">
+  <title>Echo command dashboard</title>
+  <style>
+    :root{--nav:#0c1422;--nav-soft:#182437;--nav-text:#a6b3c6;--ink:#101d35;--muted:#68778e;--paper:#f5f7fa;--line:#e3e8ef;--white:#fff;--blue:#6f8dff;--cyan:#8ed4ed;--mint:#37cdb6;--amber:#e8a84d}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{min-height:100vh;display:grid;grid-template-columns:258px minmax(0,1fr)}
+    aside{background:var(--nav);color:white;padding:25px 16px 20px;display:flex;flex-direction:column;min-height:100vh;position:sticky;top:0;height:100vh}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:#fff;padding:3px 13px 30px;font-size:22px;font-weight:700;letter-spacing:-.04em}.brand-icon{width:34px;height:34px;border-radius:12px;background:#627df1;display:grid;place-items:center;color:#fff;font-size:21px}.brand em{display:block;color:#7f90a9;font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-style:normal;font-weight:700;line-height:1.4}.nav-label{padding:15px 14px 8px;color:#6e7d91;font-size:10px;text-transform:uppercase;letter-spacing:.16em;font-weight:750}.menu{display:grid;gap:4px}.menu a{min-height:43px;padding:10px 13px;color:var(--nav-text);display:flex;align-items:center;gap:12px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:600}.menu a:hover{background:#121f31;color:#fff}.menu a.active{background:#1c293b;color:#fff;box-shadow:inset 3px 0 var(--blue)}.ico{width:20px;text-align:center;font-size:16px;color:currentColor}.side-bottom{margin-top:auto;border-top:1px solid #263247;padding-top:14px}.workspace-tag{margin:12px 12px 0;color:#708098;font-size:11px;line-height:1.45}
+    main{min-width:0;padding:30px clamp(22px,4vw,58px) 50px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:32px}.crumb{font-size:12px;color:var(--muted)}.crumb strong{color:var(--ink)}.top-actions{display:flex;align-items:center;gap:14px}.live-status{display:flex;align-items:center;gap:7px;color:#317862;font-size:11px;font-weight:700;background:#e8f7f1;border:1px solid #ccebdd;padding:7px 10px;border-radius:30px}.dot{width:7px;height:7px;background:var(--mint);border-radius:50%}.avatar{width:34px;height:34px;border-radius:50%;background:#e7edff;color:#5874df;display:grid;place-items:center;font-weight:800}
+    .heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:21px}.eyebrow{color:#65758c;text-transform:uppercase;letter-spacing:.14em;font-size:10px;font-weight:750;margin:0 0 8px}.heading h1{font-size:clamp(29px,4vw,40px);letter-spacing:-.05em;line-height:1.04;margin:0;font-weight:650}.heading p{color:var(--muted);margin:9px 0 0;font-size:13px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:11px 16px;background:var(--nav);color:white;border-radius:9px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;transition:transform .15s,background .15s}.btn:hover{background:#243852;transform:translateY(-1px)}.btn-light{background:white;color:var(--ink);border:1px solid var(--line)}.btn-light:hover{background:#f2f5f9}
+    .banner{display:flex;align-items:center;gap:13px;background:#eaf7fc;border:1px solid #cce8f1;border-radius:12px;padding:13px 16px;margin-bottom:19px;color:#33586c;font-size:12px}.banner-icon{flex:0 0 auto;width:27px;height:27px;border-radius:8px;background:#d3eef7;color:#367b99;display:grid;place-items:center;font-weight:800}.banner strong{color:#163951}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:17px}.card{background:var(--white);border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px #172a4105}.metric{padding:17px 18px;min-height:126px}.metric-top{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:11px;font-weight:650}.metric-icon{height:29px;width:29px;border-radius:9px;display:grid;place-items:center;background:#edf1ff;color:#5d79ec;font-size:14px}.metric-value{font-size:28px;line-height:1.1;letter-spacing:-.05em;font-weight:700;margin-top:12px}.metric-note{color:#8590a1;font-size:11px;margin-top:4px}
+    .grid-main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(275px,.75fr);gap:16px;align-items:stretch}.panel{padding:20px;margin-bottom:16px}.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}.panel-head h2{font-size:16px;margin:0;letter-spacing:-.02em}.panel-head p{color:var(--muted);font-size:11px;margin:3px 0 0}.text-link{font-size:11px;font-weight:700;color:#4668d9;text-decoration:none;white-space:nowrap}.memory-state{border:1px solid #e7ebf0;border-radius:11px;background:#fafbfd;padding:16px}.memory-title{display:flex;align-items:center;gap:10px}.memory-logo{width:36px;height:36px;border-radius:11px;background:#eef1ff;display:grid;place-items:center;color:#5a74e6;font-weight:800}.memory-title strong{display:block;font-size:13px}.memory-title span{display:block;color:var(--muted);font-size:11px}.memory-copy{font-size:12px;color:#5c6b80;margin:13px 0}.progress{height:6px;background:#e8edf3;border-radius:8px;overflow:hidden}.progress span{display:block;width:0;height:100%;background:linear-gradient(90deg,#6686f3,#8ed4ed);border-radius:8px;transition:width .4s}.progress-label{display:flex;justify-content:space-between;color:#7a8798;font-size:10px;margin-top:6px}.steps{display:grid;gap:11px;margin-top:16px}.step{display:grid;grid-template-columns:25px 1fr;gap:10px;align-items:start}.step-no{height:24px;width:24px;border-radius:50%;background:#f0f3f7;display:grid;place-items:center;font-size:10px;font-weight:750;color:#617087}.step.done .step-no{background:#e5f7f0;color:#37866a}.step strong{display:block;font-size:11px}.step p{margin:1px 0 0;color:#7c8899;font-size:10px}
+    .roles{display:grid;gap:10px}.role{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:13px;background:#f9fafc;border:1px solid #edf0f4;border-radius:11px}.role-icon{height:32px;width:32px;border-radius:10px;background:white;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:800;color:#40557a}.role strong{font-size:12px;display:block}.role p{font-size:10px;color:#768398;margin:2px 0 0}.safety-line{display:flex;gap:8px;align-items:flex-start;margin-top:13px;padding:10px;background:#fff9ed;border-radius:9px;color:#82673d;font-size:10px}.safety-line b{color:#654b26}
+    .cases{overflow:hidden}.case-row{display:grid;grid-template-columns:1fr auto auto;gap:15px;align-items:center;padding:12px 0;border-top:1px solid #edf0f4}.case-main strong{font-size:12px;display:block}.case-main span{color:#7a8799;font-size:10px}.case-tag{border-radius:20px;padding:4px 8px;background:#eef6f2;color:#448267;font-size:9px;font-weight:750;white-space:nowrap}.case-date{font-size:10px;color:#8792a2}.empty-cases{padding:14px;background:#fafbfd;border:1px dashed #dce2e9;border-radius:10px;color:#778498;font-size:11px}.empty-cases strong{display:block;color:#32445f;font-size:12px;margin-bottom:4px}
+    .criteria{display:grid;grid-template-columns:1fr 1fr;gap:9px}.criterion{padding:11px;border-radius:10px;background:#fafbfd;border:1px solid #edf0f4}.criterion-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.criterion strong{font-size:11px}.criterion em{font-style:normal;color:#45816d;font-size:9px;font-weight:750}.criterion p{color:#7a8798;font-size:10px;line-height:1.4;margin:5px 0 0}.footnote{padding:19px 0 0;color:#8b96a6;font-size:10px;text-align:center}
+    @media(max-width:1050px){.shell{grid-template-columns:220px minmax(0,1fr)}aside{padding-inline:12px}.grid-main{grid-template-columns:1fr}.cards{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:720px){.shell{display:block}aside{position:relative;top:auto;height:auto;min-height:0;padding:12px 14px 10px}.brand{padding:1px 5px 12px;font-size:19px}.brand em{display:none}.brand-icon{width:30px;height:30px}.nav-label,.side-bottom,.workspace-tag{display:none}.menu{display:flex;overflow-x:auto;gap:5px;padding-bottom:3px}.menu a{min-height:37px;white-space:nowrap;padding:8px 10px;font-size:11px}.ico{width:16px}.topbar{margin-bottom:24px}.top-actions .live-status{display:none}main{padding:22px 16px 36px}.heading{align-items:flex-start;flex-direction:column}.heading .btn{width:100%}.cards{grid-template-columns:1fr 1fr}.metric{min-height:108px;padding:14px}.metric:last-child{grid-column:span 2}.banner{align-items:flex-start}}
+    @media(max-width:440px){.cards{grid-template-columns:1fr}.metric:last-child{grid-column:auto}.criteria{grid-template-columns:1fr}.case-row{grid-template-columns:1fr auto;gap:8px}.case-date{grid-column:1/-1;order:2}.heading h1{font-size:31px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <a class="brand" href="/" aria-label="Echo home"><span class="brand-icon">e</span><span>Echo<em>Incident response</em></span></a>
+      <div class="nav-label">Main menu</div>
+      <nav class="menu" aria-label="Dashboard sections">
+        <a class="active" href="#dashboard"><span class="ico">⌁</span>Command dashboard</a>
+        <a href="/workspace.html#incident-form"><span class="ico">＋</span>Investigate incident</a>
+        <a href="#memory"><span class="ico">◉</span>Hindsight memory</a>
+        <a href="#review"><span class="ico">◇</span>Rock &amp; Salt review</a>
+        <a href="#outcomes"><span class="ico">▤</span>Verified outcomes</a>
+      </nav>
+      <div class="nav-label">Workspace</div>
+      <nav class="menu"><a href="/workflow.html"><span class="ico">ⓘ</span>How Echo works</a></nav>
+      <p class="workspace-tag">Private preview workspace<br>Memory is separate from demo data</p>
+      <div class="side-bottom"><nav class="menu"><a href="/"><span class="ico">↩</span>Return to Echo site</a></nav></div>
+    </aside>
+    <main id="dashboard">
+      <div class="topbar"><div class="crumb">Workspace <span aria-hidden="true">/</span> <strong>Command dashboard</strong></div><div class="top-actions"><span class="live-status" id="connection-status"><i class="dot"></i>Checking Hindsight…</span><span class="avatar" aria-label="Echo">e</span></div></div>
+      <header class="heading"><div><p class="eyebrow">Incident response workspace</p><h1>Good response starts with what your team learned.</h1><p>See what Echo can do now, what it has learned, and where the next response begins.</p></div><a class="btn" href="/workspace.html#incident-form">＋ Investigate an incident <span aria-hidden="true">→</span></a></header>
+      <div class="banner"><span class="banner-icon">i</span><span><strong>Prototype workspace.</strong> Echo can search saved incidents and prepare suggestions. It is not connected to your production systems and will not run changes. Do not enter credentials or customer data.</span></div>
+      <section class="cards" aria-label="Incident response status">
+        <article class="card metric"><div class="metric-top"><span>Verified team cases</span><span class="metric-icon">▤</span></div><div class="metric-value" id="case-count">—</div><div class="metric-note" id="case-note">Loading saved outcomes…</div></article>
+        <article class="card metric"><div class="metric-top"><span>Searchable memory clues</span><span class="metric-icon">◉</span></div><div class="metric-value" id="memory-count">—</div><div class="metric-note">From Hindsight team memory</div></article>
+        <article class="card metric"><div class="metric-top"><span>Next response</span><span class="metric-icon">↗</span></div><div class="metric-value" style="font-size:20px;margin-top:17px">Ready when you are</div><div class="metric-note">Describe an issue to start</div></article>
+      </section>
+      <div class="grid-main">
+        <div>
+          <section class="card panel" id="memory">
+            <div class="panel-head"><div><h2>How Echo learns from your team</h2><p>Hindsight keeps verified incident history ready for the next response.</p></div><a class="text-link" href="/workspace.html#incident-form">Open workspace →</a></div>
+            <div class="memory-state"><div class="memory-title"><span class="memory-logo">H</span><div><strong>Team incident memory</strong><span id="memory-state">Checking connection…</span></div></div><p class="memory-copy" id="memory-copy">Echo uses a dedicated memory bank for confirmed outcomes. Demo examples are kept separately.</p><div class="progress" aria-label="Verified outcomes saved"><span id="progress-bar"></span></div><div class="progress-label"><span>First verified outcome</span><span id="progress-label">Waiting for a confirmed case</span></div></div>
+            <div class="steps"><div class="step"><span class="step-no">1</span><div><strong>Describe the incident</strong><p>Echo compares symptoms and recent changes with saved history.</p></div></div><div class="step"><span class="step-no">2</span><div><strong>Review the proposed response</strong><p>Rock investigates. Salt checks safety and flags unknowns.</p></div></div><div class="step"><span class="step-no" id="step-three">3</span><div><strong>Save only what the team verified</strong><p>Confirmed causes and outcomes can help with the next similar case.</p></div></div></div>
+          </section>
+          <section class="card panel cases" id="outcomes">
+            <div class="panel-head"><div><h2>Recent verified outcomes</h2><p>Only team-confirmed cases appear here.</p></div><a class="text-link" href="/workspace.html#incident-form">Add outcome →</a></div>
+            <div id="case-list"><div class="empty-cases"><strong>Loading your history…</strong>Checking the separate team memory bank.</div></div>
+          </section>
+        </div>
+        <div>
+          <section class="card panel" id="review">
+            <div class="panel-head"><div><h2>Two focused reviews</h2><p>Each response has an investigator and a safety check.</p></div></div>
+            <div class="roles"><div class="role"><span class="role-icon">R</span><div><strong>Rock · Investigates</strong><p>Looks for relevant past cases, likely causes, and a possible fix supported by evidence.</p></div></div><div class="role"><span class="role-icon">S</span><div><strong>Salt · Reviews safety</strong><p>Checks proposed steps against constraints and calls out actions that need approval.</p></div></div></div>
+            <div class="safety-line"><span>✓</span><span><b>Operator stays in control.</b> Echo does not make production changes. A past fix is a clue to verify, not permission to repeat it.</span></div>
+          </section>
+          <section class="card panel">
+            <div class="panel-head"><div><h2>Evaluation goals</h2><p>What this prototype is built to demonstrate.</p></div></div>
+            <div class="criteria">
+              <div class="criterion"><div class="criterion-top"><strong>Innovation</strong><em>In the flow</em></div><p>Memory-backed incident response with a separate safety review.</p></div>
+              <div class="criterion"><div class="criterion-top"><strong>Hindsight memory</strong><em>Connected</em></div><p>Dedicated team bank learns from operator-confirmed outcomes.</p></div>
+              <div class="criterion"><div class="criterion-top"><strong>Implementation</strong><em>Prototype</em></div><p>Server-side API key; approval-gated memory writes.</p></div>
+              <div class="criterion"><div class="criterion-top"><strong>User experience</strong><em>Guided</em></div><p>Walkthrough, incident form, plain-language response cards.</p></div>
+              <div class="criterion" style="grid-column:1/-1"><div class="criterion-top"><strong>Real-world impact</strong><em>Path to adoption</em></div><p>Help on-call teams find verified lessons faster. Team sign-in and production integrations are future work.</p></div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <p class="footnote">Echo is a prototype. Connect approved team history and add authentication before using it with multiple responders.</p>
+    </main>
+  </div>
+  <script>
+    async function loadDashboard(){
+      const caseCount=document.getElementById('case-count'),memoryCount=document.getElementById('memory-count'),caseNote=document.getElementById('case-note'),list=document.getElementById('case-list');
+      try{
+        const response=await fetch('/api/live/dashboard');const data=await response.json();if(!response.ok)throw Error(data.detail||'Could not load team memory.');
+        document.getElementById('connection-status').innerHTML='<i class="dot"></i>Memory connection ready';
+        caseCount.textContent=String(data.verified_case_count);memoryCount.textContent=String(data.searchable_memory_facts);caseNote.textContent=data.verified_case_count===1?'One verified case available for future searches':`${data.verified_case_count} verified cases available for future searches`;
+        document.getElementById('memory-state').textContent=data.history_is_empty?'Connected · waiting for the first verified outcome':'Connected · team history is ready';
+        document.getElementById('memory-copy').textContent=data.history_is_empty?'This memory is separate from the fictional demo. Save a confirmed outcome after an incident, and Echo can use it as evidence in a future response.':'Echo can search your team’s saved case history. Each saved lesson is a clue to review against the current incident.';
+        document.getElementById('progress-bar').style.width=data.verified_case_count?'100%':'0%';document.getElementById('progress-label').textContent=data.verified_case_count?`First verified outcome saved · ${data.verified_case_count} total`:'Waiting for a confirmed case';
+        if(data.verified_case_count)document.getElementById('step-three').classList.add('done');
+        if(data.recent_cases.length){list.innerHTML=data.recent_cases.map(c=>`<div class="case-row"><div class="case-main"><strong>${escapeHtml(c.incident_id)}</strong><span>${escapeHtml(c.service)}</span></div><span class="case-tag">${escapeHtml(c.severity)}</span><time class="case-date">${escapeHtml(formatDate(c.updated_at))}</time></div>`).join('');}
+        else list.innerHTML='<div class="empty-cases"><strong>No verified outcomes saved yet</strong>After a real incident is resolved, save the team-confirmed result from the response workspace. It will appear here and be searchable for future incidents.</div>';
+      }catch(error){document.getElementById('connection-status').innerHTML='<i class="dot" style="background:#e8a84d"></i>Memory unavailable';caseCount.textContent='—';memoryCount.textContent='—';caseNote.textContent='Could not load team memory';document.getElementById('memory-state').textContent='Connection needs attention';list.innerHTML=`<div class="empty-cases"><strong>Dashboard data is unavailable</strong>${escapeHtml(error.message)}</div>`;}
+    }
+    function formatDate(value){if(!value)return 'Saved';const d=new Date(value);return Number.isNaN(d.getTime())?'Saved':d.toLocaleDateString(undefined,{month:'short',day:'numeric'});}
+    function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+    loadDashboard();
+  </script>
+</body>
+</html>

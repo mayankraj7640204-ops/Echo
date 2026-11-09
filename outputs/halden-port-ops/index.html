@@ -321,7 +321,7 @@
       <a href="#resources">Resources</a>
     </nav>
     <div class="navright">
-      <a class="login" href="/workspace.html">Login</a>
+      <a class="login" href="/dashboard.html">Login</a>
       <div class="navcta" id="navcta" aria-hidden="true">
         <a class="btn" id="navdemo" href="#try-echo" tabindex="-1">
           <span class="lbl">Get a demo</span><span class="dot"></span>
@@ -448,7 +448,7 @@
       const workflowLink = document.getElementById("workflow-link");
       if (location.protocol === "file:") {
         workflowLink.href = "http://127.0.0.1:8000/workflow.html";
-        document.querySelector(".login").href = "http://127.0.0.1:8000/workspace.html";
+        document.querySelector(".login").href = "http://127.0.0.1:8000/dashboard.html";
       }
       const incidentForm = document.getElementById("incident-form");
       const analyzeButton = document.getElementById("analyze-button");
