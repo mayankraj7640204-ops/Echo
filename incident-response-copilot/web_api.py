@@ -87,6 +87,7 @@ app = FastAPI(title="Echo Incident Response", version="0.3.0", lifespan=lifespan
 
 
 class AnalyzeRequest(BaseModel):
+    incident_id: str = Field(default="", max_length=80)
     service: str = Field(min_length=1, max_length=160)
     symptoms: str = Field(min_length=8, max_length=4000)
     recent_changes: str = Field(default="Not provided", max_length=2000)
