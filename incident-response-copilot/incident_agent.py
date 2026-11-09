@@ -3,9 +3,18 @@
 import asyncio
 import os
 import re
+from pathlib import Path
 
 import certifi
 from dotenv import load_dotenv
+
+load_dotenv()
+system_ca_bundle = "/etc/ssl/cert.pem"
+os.environ.setdefault(
+    "SSL_CERT_FILE",
+    system_ca_bundle if Path(system_ca_bundle).is_file() else certifi.where(),
+)
+
 from hindsight_client import Hindsight
 from pydantic import BaseModel, Field
 
@@ -45,14 +54,6 @@ class RecordIncidentInput(BaseModel):
     prevention: str = Field(description="Follow-up action that reduces recurrence")
 
 
-load_dotenv()
-# Use the macOS system CA bundle when available; it includes the roots trusted
-# by the local Python runtime. Fall back to certifi on other platforms.
-system_ca_bundle = "/etc/ssl/cert.pem"
-os.environ.setdefault(
-    "SSL_CERT_FILE",
-    system_ca_bundle if os.path.isfile(system_ca_bundle) else certifi.where(),
-)
 api_key = os.getenv("HINDSIGHT_API_KEY")
 if not api_key:
     raise RuntimeError("Set HINDSIGHT_API_KEY in .env before starting the agent.")
@@ -71,10 +72,26 @@ def recall_incidents(args: RecallIncidentsInput, bank_id: str = BANK_ID) -> str:
         budget="mid",
         max_tokens=1200,
     )
-    if not result.results:
+    return format_incident_memories(result.results)
+
+
+async def arecall_incidents(args: RecallIncidentsInput, bank_id: str = BANK_ID) -> str:
+    """Async version for web requests sharing FastAPI's event loop."""
+    result = await hindsight.arecall(
+        bank_id=bank_id,
+        query=args.query,
+        budget="mid",
+        max_tokens=1200,
+    )
+    return format_incident_memories(result.results)
+
+
+def format_incident_memories(results) -> str:
+    """Return at most two distinct incident examples, not every extracted fact."""
+    if not results:
         return "No relevant incident memories found. Treat this as a new incident."
     examples = {}
-    for memory in result.results:
+    for memory in results:
         text = " ".join(memory.text.split())
         incident_ids = re.findall(
             r"\bIncident ID:\s*([A-Z0-9][A-Z0-9._/-]{1,79})",
@@ -120,6 +137,28 @@ def reflect_mitigation(args: ReflectMitigationInput) -> str:
     return response.text
 
 
+async def areflect_mitigation(args: ReflectMitigationInput) -> str:
+    """Async version for web requests sharing FastAPI's event loop."""
+    response = await hindsight.areflect(
+        bank_id=BANK_ID,
+        query=(
+            "Help an on-call team understand this incident in plain, everyday language. "
+            "Use at most 120 words. Use these short sections: 'What we know', "
+            "'What may be happening', 'What to check next' (at most 3 safe checks), "
+            "and 'Avoid for now'. Clearly label guesses; cite no more than two matching "
+            "incident IDs. Explain unavoidable technical terms briefly. Do not dump "
+            "individual memory facts or repeat the entire history."
+        ),
+        context=(
+            f"Service: {args.service}\nSymptoms and impact: {args.symptoms}\n"
+            f"Recent changes: {args.recent_changes}\n"
+            f"Constraints: {args.constraints}"
+        ),
+        budget="mid",
+    )
+    return response.text
+
+
 def record_incident(args: RecordIncidentInput, bank_id: str = BANK_ID) -> str:
     """Store a resolved incident so later responders can learn from it."""
     content = (
@@ -130,6 +169,29 @@ def record_incident(args: RecordIncidentInput, bank_id: str = BANK_ID) -> str:
         f"Prevention follow-up: {args.prevention}"
     )
     hindsight.retain(
+        bank_id=bank_id,
+        content=content,
+        context="Verified incident postmortem",
+        metadata={
+            "incident_id": args.incident_id,
+            "service": args.service,
+            "severity": args.severity,
+            "source": "operator-confirmed",
+        },
+    )
+    return f"Saved {args.incident_id} to Hindsight for future incident recall."
+
+
+async def arecord_incident(args: RecordIncidentInput, bank_id: str = BANK_ID) -> str:
+    """Async version for web requests sharing FastAPI's event loop."""
+    content = (
+        f"Incident ID: {args.incident_id}\nService: {args.service}\n"
+        f"Severity: {args.severity}\nSymptoms and impact: {args.symptoms}\n"
+        f"Confirmed root cause: {args.root_cause}\n"
+        f"Resolution and outcome: {args.resolution}\n"
+        f"Prevention follow-up: {args.prevention}"
+    )
+    await hindsight.aretain(
         bank_id=bank_id,
         content=content,
         context="Verified incident postmortem",

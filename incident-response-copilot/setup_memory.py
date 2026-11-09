@@ -5,7 +5,6 @@ from pathlib import Path
 
 import certifi
 from dotenv import load_dotenv
-from hindsight_client import Hindsight
 
 
 BANK_ID = "hh3-incident-response"
@@ -18,6 +17,8 @@ def main() -> None:
         "SSL_CERT_FILE",
         system_ca_bundle if Path(system_ca_bundle).is_file() else certifi.where(),
     )
+    from hindsight_client import Hindsight
+
     api_key = os.environ.get("HINDSIGHT_API_KEY")
     if not api_key:
         raise SystemExit("Set HINDSIGHT_API_KEY in .env before creating the memory bank.")
@@ -27,6 +28,13 @@ def main() -> None:
         api_key=api_key,
     )
     try:
+        try:
+            client.get_bank_config(BANK_ID)
+            print(f"Hindsight bank already ready: {BANK_ID}")
+            return
+        except Exception as exc:
+            if getattr(exc, "status", None) != 404 and getattr(exc, "status_code", None) != 404:
+                raise
         bank = client.create_bank(
             bank_id=BANK_ID,
             name="Incident Response Memory",

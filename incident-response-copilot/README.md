@@ -15,11 +15,12 @@ The public interactive demo uses synthetic incidents in `hh3-incident-response`.
 
 1. Copy .env.example to .env and add a Hindsight Cloud API key. The project uses https://api.hindsight.vectorize.io by default.
 2. The ignored agent_config.yaml is configured to use the existing Rock agent identity on Band.ai.
-3. Install dependencies and create the memory bank:
+3. Install dependencies and create the two separate memory banks (the live team bank starts empty):
 
    python3 -m venv .venv
    .venv/bin/python -m pip install -e .
    .venv/bin/python setup_memory.py
+   .venv/bin/python setup_live_memory.py
 
 4. Start the website and Hindsight-backed demo API from this directory:
 
@@ -29,7 +30,7 @@ The public interactive demo uses synthetic incidents in `hh3-incident-response`.
 
    The top “Login” link opens http://127.0.0.1:8000/dashboard.html. The dashboard reads live Hindsight memory counts and recent verified outcomes. Its incident workspace is http://127.0.0.1:8000/workspace.html. These pages are a prototype, not user authentication. They search only the separate `echo-live-incidents` bank. Add cases over time through the operator-confirmed save form; do not seed demo data into that bank. The page’s Rock and Salt names refer to two separate Hindsight-backed review roles, not the Band.ai roleplay agents.
 
-   Sidebar features open dedicated pages: `/memory.html` searches confirmed team cases, `/review.html` runs the Rock and Salt review live, and `/outcomes.html` records a verified result and shows recent saved outcomes. Each page links to the next step in the incident workflow.
+   Sidebar features open dedicated pages: `/memory.html` searches confirmed team cases and lets an operator add one sanitized, approved past incident at a time, `/review.html` runs the Rock and Salt review live, and `/outcomes.html` records a verified result and shows recent saved outcomes. Each page links to the next step in the incident workflow. The memory form requires an explicit approval checkbox and rejects duplicate incident references.
 
 5. To use the Band.ai agent as well, start it in a second terminal:
 

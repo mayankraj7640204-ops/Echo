@@ -5,18 +5,20 @@ Echo is an incident response copilot. It searches approved incident history, pre
 ## Run locally
 
 1. Create `incident-response-copilot/.env` from `.env.example` and add your Hindsight Cloud API key. The key stays on the server.
-2. Install and start the web app:
+2. Install the app and prepare its separate demo and team memory banks:
 
    ```sh
    cd incident-response-copilot
    python3 -m venv .venv
    .venv/bin/python -m pip install -e .
+   .venv/bin/python setup_memory.py
+   .venv/bin/python setup_live_memory.py
    .venv/bin/python web_api.py
    ```
 
 3. Open [http://127.0.0.1:8000](http://127.0.0.1:8000). “See the workflow” opens a prepared walkthrough; “Try a live demo” analyzes an incident against fictional sample cases; “Login” opens the command dashboard, with live Hindsight memory status and a link to the separate incident response workspace.
 
-The live workspace uses the separate `echo-live-incidents` Hindsight bank. It starts empty and learns only from operator-confirmed incidents. Echo does not connect to or change production systems. The workspace is a prototype and does not provide user authentication.
+The live workspace uses the separate `echo-live-incidents` Hindsight bank. It starts empty and learns only from operator-confirmed incidents. On the Hindsight memory page, operators can add sanitized past cases after confirming they are approved to share; they can also add confirmed outcomes after new incidents. Echo does not connect to or change production systems. The workspace is a prototype and does not provide user authentication.
 
 ## Project layout
 

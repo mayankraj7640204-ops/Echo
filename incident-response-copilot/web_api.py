@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -27,16 +28,24 @@ from incident_agent import (  # noqa: E402
     RecallIncidentsInput,
     ReflectMitigationInput,
     RecordIncidentInput,
+    arecall_incidents,
+    arecord_incident,
+    areflect_mitigation,
     hindsight,
-    recall_incidents,
-    reflect_mitigation,
-    record_incident,
 )
 
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("echo.web")
-app = FastAPI(title="Echo Incident Response", version="0.2.0")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    yield
+    await hindsight.aclose()
+
+
+app = FastAPI(title="Echo Incident Response", version="0.3.0", lifespan=lifespan)
 
 
 class AnalyzeRequest(BaseModel):
@@ -68,6 +77,17 @@ class MemorySearchRequest(BaseModel):
     query: str = Field(min_length=4, max_length=2000)
 
 
+class ApprovedHistoryRequest(BaseModel):
+    incident_id: str = Field(min_length=3, max_length=80)
+    service: str = Field(min_length=1, max_length=160)
+    severity: str = Field(min_length=2, max_length=30)
+    symptoms: str = Field(min_length=8, max_length=4000)
+    root_cause: str = Field(min_length=2, max_length=2000)
+    resolution: str = Field(min_length=8, max_length=4000)
+    prevention: str = Field(min_length=4, max_length=2000)
+    operator_approved: bool = False
+
+
 class LiveRecordRequest(LiveAnalyzeRequest):
     incident_id: str = Field(min_length=3, max_length=80)
     severity: str = Field(min_length=2, max_length=30)
@@ -82,26 +102,59 @@ def health() -> dict[str, str]:
     return {"status": "ready", "service": "echo-incident-demo"}
 
 
+async def list_live_memory_items(limit: int = 5000) -> tuple[list[object], int, bool]:
+    """Page through live-bank clues while bounding dashboard work."""
+    items: list[object] = []
+    offset = 0
+    total = 0
+    while offset < limit:
+        page = await hindsight.alist_memories(
+            bank_id=LIVE_BANK_ID,
+            limit=min(200, limit - offset),
+            offset=offset,
+        )
+        total = page.total
+        if not page.items:
+            break
+        items.extend(page.items)
+        offset += len(page.items)
+        if offset >= total:
+            return items, total, True
+    return items, total, total <= len(items)
+
+
+def extract_incident_id(memory) -> str | None:
+    metadata = memory.metadata or {}
+    found = metadata.get("incident_id") or metadata.get("Incident ID")
+    if not found:
+        match = re.search(
+            r"\bIncident ID:\s*([A-Z0-9][A-Z0-9._/-]{1,79})",
+            memory.text or "",
+            re.IGNORECASE,
+        )
+        found = match.group(1) if match else None
+    return str(found).strip().upper() if found else None
+
+
+def saved_incident_ids(items: list[object]) -> set[str]:
+    return {incident_id for item in items if (incident_id := extract_incident_id(item))}
+
+
 @app.get("/api/live/dashboard")
-def live_dashboard_summary() -> dict[str, object]:
+async def live_dashboard_summary() -> dict[str, object]:
     """Show real, minimal counts from the separate operator-confirmed bank."""
     try:
-        page = hindsight.list_memories(bank_id=LIVE_BANK_ID, limit=200, offset=0)
+        items, total, count_complete = await list_live_memory_items()
         cases: dict[str, dict[str, str]] = {}
-        for item in page.items:
+        for item in items:
             metadata = item.metadata or {}
-            text = item.text or ""
-            found = metadata.get("incident_id") or metadata.get("Incident ID")
-            if not found:
-                match = re.search(r"\bIncident ID:\s*([A-Z0-9][A-Z0-9._/-]{1,79})", text, re.IGNORECASE)
-                found = match.group(1) if match else None
-            if not found:
+            incident_id = extract_incident_id(item)
+            if not incident_id:
                 continue
-            key = str(found).strip().upper()
             cases.setdefault(
-                key,
+                incident_id,
                 {
-                    "incident_id": key,
+                    "incident_id": incident_id,
                     "service": str(metadata.get("service") or "Service details saved"),
                     "severity": str(metadata.get("severity") or "Verified outcome"),
                     "updated_at": str(item.updated_at or item.var_date or ""),
@@ -109,10 +162,11 @@ def live_dashboard_summary() -> dict[str, object]:
             )
         return {
             "bank_status": "ready",
-            "searchable_memory_facts": page.total,
+            "searchable_memory_facts": total,
             "verified_case_count": len(cases),
+            "case_count_complete": count_complete,
             "recent_cases": sorted(cases.values(), key=lambda case: case["updated_at"], reverse=True)[:5],
-            "history_is_empty": page.total == 0,
+            "history_is_empty": total == 0,
         }
     except Exception as exc:
         logger.exception("Loading live dashboard summary failed")
@@ -123,10 +177,10 @@ def live_dashboard_summary() -> dict[str, object]:
 
 
 @app.post("/api/live/memory/search")
-def search_live_memory(payload: MemorySearchRequest) -> dict[str, object]:
+async def search_live_memory(payload: MemorySearchRequest) -> dict[str, object]:
     """Search only the real, operator-confirmed incident bank."""
     try:
-        result = recall_incidents(
+        result = await arecall_incidents(
             RecallIncidentsInput(query=payload.query),
             bank_id=LIVE_BANK_ID,
         )
@@ -149,11 +203,55 @@ def search_live_memory(payload: MemorySearchRequest) -> dict[str, object]:
         ) from exc
 
 
+@app.post("/api/live/memory/add")
+async def add_approved_history(payload: ApprovedHistoryRequest) -> dict[str, str]:
+    """Add one sanitized past case only after an operator approves it for reuse."""
+    if not payload.operator_approved:
+        raise HTTPException(
+            status_code=400,
+            detail="Confirm this sanitized past incident is approved for Hindsight before saving it.",
+        )
+    try:
+        existing_items, _, _ = await list_live_memory_items()
+        if payload.incident_id.strip().upper() in saved_incident_ids(existing_items):
+            raise HTTPException(
+                status_code=409,
+                detail="That incident reference is already in team memory. Search before adding it again.",
+            )
+        content = (
+            f"Incident ID: {payload.incident_id}\nService: {payload.service}\n"
+            f"Severity: {payload.severity}\nSymptoms and impact: {payload.symptoms}\n"
+            f"Confirmed root cause: {payload.root_cause}\n"
+            f"Resolution and outcome: {payload.resolution}\n"
+            f"Prevention follow-up: {payload.prevention}"
+        )
+        await hindsight.aretain(
+            bank_id=LIVE_BANK_ID,
+            content=content,
+            context="Operator-approved historical incident report",
+            metadata={
+                "incident_id": payload.incident_id,
+                "service": payload.service,
+                "severity": payload.severity,
+                "source": "operator-approved-history",
+            },
+        )
+        return {"message": f"Added {payload.incident_id} to team memory for future incident searches."}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Adding approved incident history failed")
+        raise HTTPException(
+            status_code=502,
+            detail="Echo could not add this history right now. Please try again.",
+        ) from exc
+
+
 @app.post("/api/incident/analyze")
-def analyze_incident(payload: AnalyzeRequest) -> dict[str, str]:
+async def analyze_incident(payload: AnalyzeRequest) -> dict[str, str]:
     """Recall matching incidents and prepare a cautious, evidence-aware brief."""
     try:
-        memories = recall_incidents(
+        memories = await arecall_incidents(
             RecallIncidentsInput(
                 query=(
                     f"Service: {payload.service}\nSymptoms: {payload.symptoms}\n"
@@ -161,7 +259,7 @@ def analyze_incident(payload: AnalyzeRequest) -> dict[str, str]:
                 )
             )
         )
-        brief = reflect_mitigation(
+        brief = await areflect_mitigation(
             ReflectMitigationInput(
                 service=payload.service,
                 symptoms=payload.symptoms,
@@ -179,10 +277,10 @@ def analyze_incident(payload: AnalyzeRequest) -> dict[str, str]:
 
 
 @app.post("/api/live/analyze")
-def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object]:
+async def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object]:
     """Run an isolated, current incident review against operator-approved history."""
     try:
-        memories = recall_incidents(
+        memories = await arecall_incidents(
             RecallIncidentsInput(
                 query=(
                     f"Service: {payload.service}\nSymptoms: {payload.symptoms}\n"
@@ -201,7 +299,7 @@ def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object]:
             f"Recent changes: {payload.recent_changes}\nDo-not-cross constraints: {payload.constraints}\n"
             f"Relevant operator-confirmed history, if any: {memories}"
         )
-        investigation = hindsight.reflect(
+        investigation = (await hindsight.areflect(
             bank_id=LIVE_BANK_ID,
             query=(
                 "Act as Rock, the incident investigator. In plain language, give a short "
@@ -219,8 +317,8 @@ def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object]:
             ),
             context=context,
             budget="mid",
-        ).text
-        safety_review = hindsight.reflect(
+        )).text
+        safety_review = (await hindsight.areflect(
             bank_id=LIVE_BANK_ID,
             query=(
                 "Act as Salt, an independent safety reviewer. Review the incident facts, "
@@ -234,7 +332,7 @@ def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object]:
             ),
             context=context,
             budget="mid",
-        ).text
+        )).text
         return {
             "matches": matches[:2],
             "match_count": len(matches[:2]),
@@ -254,7 +352,7 @@ def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object]:
 
 
 @app.post("/api/incident/record")
-def save_incident(payload: RecordRequest) -> dict[str, str]:
+async def save_incident(payload: RecordRequest) -> dict[str, str]:
     """Record an outcome only after explicit operator confirmation."""
     if not payload.operator_confirmed:
         raise HTTPException(
@@ -262,7 +360,7 @@ def save_incident(payload: RecordRequest) -> dict[str, str]:
             detail="Confirm the resolution before saving it to incident memory.",
         )
     try:
-        message = record_incident(
+        message = await arecord_incident(
             RecordIncidentInput(
                 incident_id=payload.incident_id,
                 service=payload.service,
@@ -283,7 +381,7 @@ def save_incident(payload: RecordRequest) -> dict[str, str]:
 
 
 @app.post("/api/live/record")
-def save_live_incident(payload: LiveRecordRequest) -> dict[str, str]:
+async def save_live_incident(payload: LiveRecordRequest) -> dict[str, str]:
     """Store only a resolution explicitly approved by the incident operator."""
     if not payload.operator_confirmed:
         raise HTTPException(
@@ -291,7 +389,13 @@ def save_live_incident(payload: LiveRecordRequest) -> dict[str, str]:
             detail="Confirm that the incident team verified and approved this outcome before saving it.",
         )
     try:
-        message = record_incident(
+        existing_items, _, _ = await list_live_memory_items()
+        if payload.incident_id.strip().upper() in saved_incident_ids(existing_items):
+            raise HTTPException(
+                status_code=409,
+                detail="That incident reference is already saved. Search team memory before adding it again.",
+            )
+        message = await arecord_incident(
             RecordIncidentInput(
                 incident_id=payload.incident_id,
                 service=payload.service,
@@ -304,6 +408,8 @@ def save_live_incident(payload: LiveRecordRequest) -> dict[str, str]:
             bank_id=LIVE_BANK_ID,
         )
         return {"message": message}
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Saving live incident outcome failed")
         raise HTTPException(
