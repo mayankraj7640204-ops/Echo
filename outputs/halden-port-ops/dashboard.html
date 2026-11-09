@@ -27,11 +27,11 @@
       <a class="brand" href="/" aria-label="Echo home"><span class="brand-icon">e</span><span>Echo<em>Incident response</em></span></a>
       <div class="nav-label">Main menu</div>
       <nav class="menu" aria-label="Dashboard sections">
-        <a class="active" href="#dashboard"><span class="ico">⌁</span>Command dashboard</a>
-        <a href="/workspace.html#incident-form"><span class="ico">＋</span>Investigate incident</a>
-        <a href="#memory"><span class="ico">◉</span>Hindsight memory</a>
-        <a href="#review"><span class="ico">◇</span>Rock &amp; Salt review</a>
-        <a href="#outcomes"><span class="ico">▤</span>Verified outcomes</a>
+        <a class="active" href="/dashboard.html"><span class="ico">⌁</span>Command dashboard</a>
+        <a href="/workspace.html"><span class="ico">＋</span>Investigate incident</a>
+        <a href="/memory.html"><span class="ico">◉</span>Hindsight memory</a>
+        <a href="/review.html"><span class="ico">◇</span>Rock &amp; Salt review</a>
+        <a href="/outcomes.html"><span class="ico">▤</span>Verified outcomes</a>
       </nav>
       <div class="nav-label">Workspace</div>
       <nav class="menu"><a href="/workflow.html"><span class="ico">ⓘ</span>How Echo works</a></nav>
@@ -40,7 +40,7 @@
     </aside>
     <main id="dashboard">
       <div class="topbar"><div class="crumb">Workspace <span aria-hidden="true">/</span> <strong>Command dashboard</strong></div><div class="top-actions"><span class="live-status" id="connection-status"><i class="dot"></i>Checking Hindsight…</span><span class="avatar" aria-label="Echo">e</span></div></div>
-      <header class="heading"><div><p class="eyebrow">Incident response workspace</p><h1>Good response starts with what your team learned.</h1><p>See what Echo can do now, what it has learned, and where the next response begins.</p></div><a class="btn" href="/workspace.html#incident-form">＋ Investigate an incident <span aria-hidden="true">→</span></a></header>
+      <header class="heading"><div><p class="eyebrow">Incident response workspace</p><h1>Good response starts with what your team learned.</h1><p>See what Echo can do now, what it has learned, and where the next response begins.</p></div><a class="btn" href="/workspace.html">＋ Investigate an incident <span aria-hidden="true">→</span></a></header>
       <div class="banner"><span class="banner-icon">i</span><span><strong>Prototype workspace.</strong> Echo can search saved incidents and prepare suggestions. It is not connected to your production systems and will not run changes. Do not enter credentials or customer data.</span></div>
       <section class="cards" aria-label="Incident response status">
         <article class="card metric"><div class="metric-top"><span>Verified team cases</span><span class="metric-icon">▤</span></div><div class="metric-value" id="case-count">—</div><div class="metric-note" id="case-note">Loading saved outcomes…</div></article>
@@ -50,18 +50,18 @@
       <div class="grid-main">
         <div>
           <section class="card panel" id="memory">
-            <div class="panel-head"><div><h2>How Echo learns from your team</h2><p>Hindsight keeps verified incident history ready for the next response.</p></div><a class="text-link" href="/workspace.html#incident-form">Open workspace →</a></div>
+            <div class="panel-head"><div><h2>How Echo learns from your team</h2><p>Hindsight keeps verified incident history ready for the next response.</p></div><a class="text-link" href="/memory.html">Open memory →</a></div>
             <div class="memory-state"><div class="memory-title"><span class="memory-logo">H</span><div><strong>Team incident memory</strong><span id="memory-state">Checking connection…</span></div></div><p class="memory-copy" id="memory-copy">Echo uses a dedicated memory bank for confirmed outcomes. Demo examples are kept separately.</p><div class="progress" aria-label="Verified outcomes saved"><span id="progress-bar"></span></div><div class="progress-label"><span>First verified outcome</span><span id="progress-label">Waiting for a confirmed case</span></div></div>
             <div class="steps"><div class="step"><span class="step-no">1</span><div><strong>Describe the incident</strong><p>Echo compares symptoms and recent changes with saved history.</p></div></div><div class="step"><span class="step-no">2</span><div><strong>Review the proposed response</strong><p>Rock investigates. Salt checks safety and flags unknowns.</p></div></div><div class="step"><span class="step-no" id="step-three">3</span><div><strong>Save only what the team verified</strong><p>Confirmed causes and outcomes can help with the next similar case.</p></div></div></div>
           </section>
           <section class="card panel cases" id="outcomes">
-            <div class="panel-head"><div><h2>Recent verified outcomes</h2><p>Only team-confirmed cases appear here.</p></div><a class="text-link" href="/workspace.html#incident-form">Add outcome →</a></div>
+            <div class="panel-head"><div><h2>Recent verified outcomes</h2><p>Only team-confirmed cases appear here.</p></div><a class="text-link" href="/outcomes.html">View outcomes →</a></div>
             <div id="case-list"><div class="empty-cases"><strong>Loading your history…</strong>Checking the separate team memory bank.</div></div>
           </section>
         </div>
         <div>
           <section class="card panel" id="review">
-            <div class="panel-head"><div><h2>Two focused reviews</h2><p>Each response has an investigator and a safety check.</p></div></div>
+            <div class="panel-head"><div><h2>Two focused reviews</h2><p>Each response has an investigator and a safety check.</p></div><a class="text-link" href="/review.html">Try the review →</a></div>
             <div class="roles"><div class="role"><span class="role-icon">R</span><div><strong>Rock · Investigates</strong><p>Looks for relevant past cases, likely causes, and a possible fix supported by evidence.</p></div></div><div class="role"><span class="role-icon">S</span><div><strong>Salt · Reviews safety</strong><p>Checks proposed steps against constraints and calls out actions that need approval.</p></div></div></div>
             <div class="safety-line"><span>✓</span><span><b>Operator stays in control.</b> Echo does not make production changes. A past fix is a clue to verify, not permission to repeat it.</span></div>
           </section>

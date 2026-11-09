@@ -29,6 +29,8 @@ The public interactive demo uses synthetic incidents in `hh3-incident-response`.
 
    The top “Login” link opens http://127.0.0.1:8000/dashboard.html. The dashboard reads live Hindsight memory counts and recent verified outcomes. Its incident workspace is http://127.0.0.1:8000/workspace.html. These pages are a prototype, not user authentication. They search only the separate `echo-live-incidents` bank. Add cases over time through the operator-confirmed save form; do not seed demo data into that bank. The page’s Rock and Salt names refer to two separate Hindsight-backed review roles, not the Band.ai roleplay agents.
 
+   Sidebar features open dedicated pages: `/memory.html` searches confirmed team cases, `/review.html` runs the Rock and Salt review live, and `/outcomes.html` records a verified result and shows recent saved outcomes. Each page links to the next step in the incident workflow.
+
 5. To use the Band.ai agent as well, start it in a second terminal:
 
    .venv/bin/python incident_agent.py

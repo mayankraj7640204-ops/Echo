@@ -64,6 +64,10 @@ class LiveAnalyzeRequest(BaseModel):
     constraints: str = Field(default="None provided", max_length=2000)
 
 
+class MemorySearchRequest(BaseModel):
+    query: str = Field(min_length=4, max_length=2000)
+
+
 class LiveRecordRequest(LiveAnalyzeRequest):
     incident_id: str = Field(min_length=3, max_length=80)
     severity: str = Field(min_length=2, max_length=30)
@@ -115,6 +119,33 @@ def live_dashboard_summary() -> dict[str, object]:
         raise HTTPException(
             status_code=502,
             detail="Echo could not load your team memory right now. Please refresh and try again.",
+        ) from exc
+
+
+@app.post("/api/live/memory/search")
+def search_live_memory(payload: MemorySearchRequest) -> dict[str, object]:
+    """Search only the real, operator-confirmed incident bank."""
+    try:
+        result = recall_incidents(
+            RecallIncidentsInput(query=payload.query),
+            bank_id=LIVE_BANK_ID,
+        )
+        if result.startswith("No relevant") or result.startswith("No clearly"):
+            matches: list[str] = []
+        else:
+            matches = [item.split(": ", 1)[1] for item in result.split("\n\n") if ": " in item]
+        return {
+            "matches": matches[:2],
+            "message": (
+                "These saved cases may help. Check that their details match the incident you are handling."
+                if matches else "No confirmed team case matched that search. Try another service name, symptom, or incident reference."
+            ),
+        }
+    except Exception as exc:
+        logger.exception("Searching live incident memory failed")
+        raise HTTPException(
+            status_code=502,
+            detail="Echo could not search team memory right now. Please try again.",
         ) from exc
 
 

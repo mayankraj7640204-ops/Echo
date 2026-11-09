@@ -20,7 +20,7 @@ The live workspace uses the separate `echo-live-incidents` Hindsight bank. It st
 
 ## Project layout
 
-- `outputs/halden-port-ops/` — Echo website, walkthrough, and incident workspace.
+- `outputs/halden-port-ops/` — Echo website, walkthrough, dashboard, incident workspace, memory search, review, and verified-outcome pages.
 - `incident-response-copilot/` — FastAPI backend and Hindsight integration.
 - `rock-salt-agents/` — Band.ai agent examples. Their local credentials and configuration files are excluded from Git.
 
