@@ -216,7 +216,16 @@
     .demo-results { display:grid; gap:16px; }
     .demo-output { padding:20px; border-radius:10px; background:#fff; }
     .demo-output h4 { margin-bottom:9px; font-size:15px; font-weight:600; }
-    .demo-output pre { white-space:pre-wrap; overflow-wrap:anywhere; color:rgb(11 29 58 / .78); font:14px/1.5 "Inter Tight",system-ui,sans-serif; }
+    .demo-case { padding:13px 14px; border:1px solid rgb(11 29 58 / .10); border-radius:8px; background:#f3f8fa; color:rgb(11 29 58 / .78); font-size:14px; line-height:1.5; }
+    .demo-case + .demo-case { margin-top:9px; }
+    .demo-case strong { display:block; margin-bottom:3px; color:var(--ink); }
+    .demo-empty { color:rgb(11 29 58 / .65); font-size:14px; line-height:1.5; }
+    .demo-brief { color:rgb(11 29 58 / .78); font-size:14px; line-height:1.5; }
+    .demo-brief h5 { margin:12px 0 4px; color:var(--ink); font-size:14px; font-weight:600; }
+    .demo-brief h5:first-child { margin-top:0; }
+    .demo-brief p { margin:4px 0 8px; }
+    .demo-brief ul,.demo-brief ol { margin:5px 0 9px; padding-left:21px; }
+    .demo-save-note { margin:-8px 0 8px; color:rgb(11 29 58 / .68); font-size:13px; line-height:1.45; }
     .record-form { margin-top:16px; padding-top:20px; border-top:1px solid rgb(11 29 58 / .14); }
     .record-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
     .record-form .demo-submit { margin-top:16px; }
@@ -372,7 +381,7 @@
         <p class="demo-eyebrow">Interactive incident demo</p>
         <h2 class="demo-heading" id="demo-heading">Try Echo on an incident.</h2>
         <p class="demo-intro">Describe what customers are experiencing and what changed. Echo looks for a similar past case, explains what may be happening, and suggests a few safe checks. It does not change live systems.</p>
-        <aside class="sample-note"><strong>About the sample history:</strong> This prototype contains four fictional incident reports added by the project for demonstration. They were not supplied by you or your company. Hindsight breaks reports into small searchable facts; Echo now groups those facts and shows at most two distinct cases. Add your team’s approved incident reports before using its own history.</aside>
+        <aside class="sample-note"><strong>This is practice data.</strong> Echo searches four fictional reports created for this demo; they are not from your company. Try the sample here. To search your team’s own incidents, choose <b>Login → Investigate an incident</b>.</aside>
         <div class="demo-grid">
           <form class="demo-card" id="incident-form">
             <h3>What is happening?</h3>
@@ -384,10 +393,11 @@
             <p class="demo-status" id="analyze-status" role="status" aria-live="polite">A fictional checkout example is ready. Edit it or run the sample.</p>
           </form>
           <div class="demo-card demo-results" id="analysis-result" hidden aria-live="polite">
-            <div class="demo-output"><h4>Closest past cases from the demo library</h4><pre id="memory-output"></pre></div>
-            <div class="demo-output"><h4>What Echo thinks and what to check</h4><pre id="brief-output"></pre></div>
+            <div class="demo-output"><h4>Similar examples from the practice library</h4><div id="memory-output" class="demo-case-list"></div></div>
+            <div class="demo-output"><h4>What may be happening and what to check</h4><div id="brief-output" class="demo-brief"></div></div>
             <form class="record-form" id="record-form" hidden>
               <h3>Save a verified resolution</h3>
+              <p class="demo-save-note">This saves a fictional lesson to the practice library only. Confirm the cause and recovery with your team first; it will not change your team’s incident memory.</p>
               <div class="record-grid">
                 <div class="demo-field"><label for="record-id">Incident reference</label><input id="record-id" value="INC-2026-001" required maxlength="80"></div>
                 <div class="demo-field"><label for="record-severity">How serious was it?</label><input id="record-severity" value="High" required maxlength="30"></div>
@@ -447,8 +457,8 @@
       const appStore = document.getElementById("app-store");
       const workflowLink = document.getElementById("workflow-link");
       if (location.protocol === "file:") {
-        workflowLink.href = "http://127.0.0.1:8000/workflow.html";
-        document.querySelector(".login").href = "http://127.0.0.1:8000/dashboard.html";
+        workflowLink.href = "http://127.0.0.1:8010/workflow.html";
+        document.querySelector(".login").href = "http://127.0.0.1:8010/dashboard.html";
       }
       const incidentForm = document.getElementById("incident-form");
       const analyzeButton = document.getElementById("analyze-button");
@@ -615,13 +625,63 @@
       }
 
       function readableBrief(text) {
-        return text
-          .replace(/^#{1,6}\s*/gm, "")
-          .replace(/\*\*(.*?)\*\*/g, "$1")
-          .replace(/`([^`]+)`/g, "$1")
-          .replace(/^[ \t]*[-*][ \t]+/gm, "• ")
-          .replace(/\n{3,}/g, "\n\n")
-          .trim();
+        const target = document.createDocumentFragment();
+        let list = null;
+        for (const rawLine of text.split(/\r?\n/)) {
+          const line = rawLine.trim();
+          if (!line) { list = null; continue; }
+          const heading = line.match(/^#{1,6}\s+(.+)$/);
+          const bullet = line.match(/^[-*]\s+(.+)$/);
+          const numbered = line.match(/^\d+[.)]\s+(.+)$/);
+          const content = line.replace(/\*\*(.*?)\*\*/g, "$1").replace(/`([^`]+)`/g, "$1");
+          if (heading) {
+            list = null;
+            const node = document.createElement("h5");
+            node.textContent = heading[1].replace(/\*\*/g, "");
+            target.append(node);
+          } else if (bullet || numbered) {
+            const nextType = bullet ? "ul" : "ol";
+            if (!list || list.tagName.toLowerCase() !== nextType) {
+              list = document.createElement(nextType);
+              target.append(list);
+            }
+            const item = document.createElement("li");
+            item.textContent = (bullet || numbered)[1].replace(/\*\*/g, "").replace(/`([^`]+)`/g, "$1");
+            list.append(item);
+          } else {
+            list = null;
+            const paragraph = document.createElement("p");
+            paragraph.textContent = content;
+            target.append(paragraph);
+          }
+        }
+        return target;
+      }
+
+      function renderDemoMemories(value) {
+        memoryOutput.replaceChildren();
+        let cases = String(value || "").split(/\n\s*\n/).map((text) => text.trim()).filter(Boolean);
+        const identified = cases.filter((text) => /\b(?:INC-[A-Z0-9][A-Z0-9._/-]*|Incident\s+(?:ID\s*:\s*)?[A-Z0-9][A-Z0-9._/-]{2,})\b/i.test(text));
+        if (identified.length) cases = identified;
+        cases = cases.slice(0, 2);
+        if (!cases.length) {
+          const empty = document.createElement("p");
+          empty.className = "demo-empty";
+          empty.textContent = "No close example was found. Echo will use the details you entered and suggest safe things to check.";
+          memoryOutput.append(empty);
+          return;
+        }
+        cases.forEach((text, index) => {
+          const card = document.createElement("article");
+          card.className = "demo-case";
+          const label = document.createElement("strong");
+          const match = text.match(/^(?:Incident\s+)?(?:ID\s*:\s*)?([A-Z][A-Z0-9._/-]{2,})\s*[:—-]?/i);
+          label.textContent = match ? `Practice case ${index + 1} · ${match[1]}` : `Practice case ${index + 1}`;
+          const summary = document.createElement("span");
+          summary.textContent = match ? text.slice(match[0].length).trim() : text;
+          card.append(label, summary);
+          memoryOutput.append(card);
+        });
       }
 
       incidentForm.addEventListener("submit", async (event) => {
@@ -631,23 +691,31 @@
         analyzeButton.disabled = true;
         analyzeButton.textContent = "Looking for similar cases…";
         analyzeStatus.textContent = "Echo is checking the sample incident library and preparing a short explanation.";
+        analysisResult.hidden = true;
         recordForm.hidden = true;
+        analyzedIncident = null;
         try {
           const response = await fetch("/api/incident/analyze", {
             method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values)
           });
           const result = await response.json();
           if (!response.ok) throw new Error(result.detail || "Echo could not complete the analysis.");
-          memoryOutput.textContent = result.memories;
-          briefOutput.textContent = readableBrief(result.brief);
+          renderDemoMemories(result.memories);
+          briefOutput.replaceChildren(readableBrief(result.brief));
           analysisResult.hidden = false;
           recordForm.hidden = false;
+          recordButton.disabled = false;
+          recordButton.textContent = "Save this lesson";
+          document.getElementById("operator-confirmed").checked = false;
+          analyzedIncident = values;
           analyzeStatus.textContent = "Ready. Compare these fictional examples with the problem you described.";
           recordStatus.textContent = "Only save a lesson after the team confirms what fixed the problem.";
         } catch (error) {
           analyzeStatus.textContent = error instanceof TypeError
             ? "The demo server is not running. Start it from incident-response-copilot to connect Echo to Hindsight."
-            : error.message;
+            : error.message.includes("could not reach incident memory")
+              ? "Echo could not reach the practice library. Check that the demo is open at http://127.0.0.1:8010, then try again."
+              : error.message;
         } finally {
           analyzeButton.disabled = false;
           analyzeButton.textContent = "Analyze with Echo";
@@ -676,13 +744,16 @@
           const result = await response.json();
           if (!response.ok) throw new Error(result.detail || "Echo could not save this incident.");
           recordStatus.textContent = result.message;
+          recordButton.textContent = "Lesson saved to practice library";
         } catch (error) {
           recordStatus.textContent = error instanceof TypeError
             ? "The demo server is not running. Start it from incident-response-copilot to connect Echo to Hindsight."
             : error.message;
         } finally {
-          recordButton.disabled = false;
-          recordButton.textContent = "Save this lesson";
+          if (!recordStatus.textContent.startsWith("Lesson saved")) {
+            recordButton.disabled = false;
+            recordButton.textContent = "Save this lesson";
+          }
         }
       });
 

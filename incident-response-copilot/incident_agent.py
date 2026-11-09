@@ -87,43 +87,48 @@ async def arecall_incidents(args: RecallIncidentsInput, bank_id: str = BANK_ID) 
 
 
 def format_incident_memories(results) -> str:
-    """Keep useful recalled facts, including memories without a formal INC- ID."""
+    """Group small Hindsight facts into no more than two distinct cases."""
     if not results:
         return "No relevant incident memories found. Treat this as a new incident."
     examples: dict[str, list[str]] = {}
     anonymous: list[str] = []
     seen: set[str] = set()
     for memory in results:
-        text = " ".join(memory.text.split())
-        text = re.sub(r"\s*\|\s*(?:When|Where|Involving):\s*[^|]+", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"\s*\|\s*", " ", text).strip()
-        normalized = re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
-        if not text or normalized in seen:
-            continue
-        seen.add(normalized)
-        incident_ids = re.findall(
-            r"\bIncident ID:\s*([A-Z0-9][A-Z0-9._/-]{1,79})",
-            text,
-            flags=re.IGNORECASE,
-        )
-        if not incident_ids:
-            incident_ids = re.findall(r"\bIncident\s+([A-Z0-9][A-Z0-9._/-]{1,79})\b", text, flags=re.IGNORECASE)
-        if not incident_ids:
-            incident_ids = re.findall(r"\bINC-[A-Z0-9][A-Z0-9._/-]{1,79}\b", text, flags=re.IGNORECASE)
-        if not incident_ids:
-            if len(anonymous) < 2:
-                anonymous.append(text[:400].rstrip())
-            continue
-        incident_id = incident_ids[0].upper()
-        examples.setdefault(incident_id, [])
-        if len(examples[incident_id]) < 3:
-            examples[incident_id].append(text[:400].rstrip())
+        # Hindsight can return several extracted facts as one multi-line item.
+        # Keep each fact separate so a loose summary cannot be mislabeled as part
+        # of whichever incident happens to appear later in the same result.
+        for fragment in re.split(r"\n+", memory.text or ""):
+            text = " ".join(fragment.split())
+            text = re.sub(r"\s*\|\s*(?:When|Where|Involving):\s*[^|]+", "", text, flags=re.IGNORECASE)
+            text = re.sub(r"\s*\|\s*", " ", text).strip()
+            normalized = re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+            if not text or normalized in seen:
+                continue
+            seen.add(normalized)
+            incident_ids = re.findall(
+                r"\bIncident ID:\s*([A-Z0-9][A-Z0-9._/-]{1,79})",
+                text,
+                flags=re.IGNORECASE,
+            )
+            if not incident_ids:
+                incident_ids = re.findall(r"\bIncident\s+([A-Z0-9][A-Z0-9._/-]{1,79})\b", text, flags=re.IGNORECASE)
+            if not incident_ids:
+                incident_ids = re.findall(r"\bINC-[A-Z0-9][A-Z0-9._/-]{1,79}\b", text, flags=re.IGNORECASE)
+            if not incident_ids:
+                if len(anonymous) < 2:
+                    anonymous.append(text[:400].rstrip())
+                continue
+            incident_id = incident_ids[0].upper()
+            examples.setdefault(incident_id, [])
+            if len(examples[incident_id]) < 3:
+                examples[incident_id].append(text[:400].rstrip())
     if not examples:
         if not anonymous:
             return "No clearly identified past incident matched. Treat this as a new incident."
         return "\n\n".join(f"Saved team memory: {summary}" for summary in anonymous)
-    formatted = [f"{incident_id}: " + " ".join(facts) for incident_id, facts in list(examples.items())[:3]]
-    formatted.extend(f"Saved team memory: {summary}" for summary in anonymous)
+    # When a case ID is available, keep loose facts out of the case cards so
+    # responders can tell which details belong to which incident.
+    formatted = [f"{incident_id}: " + " ".join(facts) for incident_id, facts in list(examples.items())[:2]]
     return "\n\n".join(formatted)
 
 

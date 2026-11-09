@@ -29,6 +29,7 @@ if not os.getenv("HINDSIGHT_API_KEY"):
     raise RuntimeError("Set HINDSIGHT_API_KEY in incident-response-copilot/.env first.")
 
 from incident_agent import (  # noqa: E402
+    BANK_ID,
     LIVE_BANK_ID,
     RecallIncidentsInput,
     ReflectMitigationInput,
@@ -145,14 +146,14 @@ def health() -> dict[str, str]:
     return {"status": "ready", "service": "echo-incident-demo"}
 
 
-async def list_live_memory_items(limit: int = 5000) -> tuple[list[object], int, bool]:
-    """Page through live-bank clues while bounding dashboard work."""
+async def list_memory_items(bank_id: str, limit: int = 5000) -> tuple[list[object], int, bool]:
+    """Page through one Hindsight bank while bounding dashboard work."""
     items: list[object] = []
     offset = 0
     total = 0
     while offset < limit:
         page = await hindsight.alist_memories(
-            bank_id=LIVE_BANK_ID,
+            bank_id=bank_id,
             limit=min(200, limit - offset),
             offset=offset,
         )
@@ -164,6 +165,11 @@ async def list_live_memory_items(limit: int = 5000) -> tuple[list[object], int, 
         if offset >= total:
             return items, total, True
     return items, total, total <= len(items)
+
+
+async def list_live_memory_items(limit: int = 5000) -> tuple[list[object], int, bool]:
+    """Page through the separate operator-approved team bank."""
+    return await list_memory_items(LIVE_BANK_ID, limit)
 
 
 def extract_incident_id(memory) -> str | None:
@@ -491,6 +497,12 @@ async def save_incident(payload: RecordRequest) -> dict[str, str]:
             detail="Confirm the resolution before saving it to incident memory.",
         )
     try:
+        existing_items, _, _ = await list_memory_items(BANK_ID)
+        if payload.incident_id.strip().upper() in saved_incident_ids(existing_items):
+            raise HTTPException(
+                status_code=409,
+                detail="That reference is already saved in the fictional demo memory. Use a new incident reference instead.",
+            )
         message = await arecord_incident(
             RecordIncidentInput(
                 incident_id=payload.incident_id,
@@ -503,6 +515,8 @@ async def save_incident(payload: RecordRequest) -> dict[str, str]:
             )
         )
         return {"message": message}
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Saving confirmed incident failed")
         raise HTTPException(
