@@ -87,32 +87,44 @@ async def arecall_incidents(args: RecallIncidentsInput, bank_id: str = BANK_ID) 
 
 
 def format_incident_memories(results) -> str:
-    """Return at most two distinct incident examples, not every extracted fact."""
+    """Keep useful recalled facts, including memories without a formal INC- ID."""
     if not results:
         return "No relevant incident memories found. Treat this as a new incident."
-    examples = {}
+    examples: dict[str, list[str]] = {}
+    anonymous: list[str] = []
+    seen: set[str] = set()
     for memory in results:
         text = " ".join(memory.text.split())
+        text = re.sub(r"\s*\|\s*(?:When|Where|Involving):\s*[^|]+", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*\|\s*", " ", text).strip()
+        normalized = re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+        if not text or normalized in seen:
+            continue
+        seen.add(normalized)
         incident_ids = re.findall(
             r"\bIncident ID:\s*([A-Z0-9][A-Z0-9._/-]{1,79})",
             text,
             flags=re.IGNORECASE,
         )
         if not incident_ids:
-            incident_ids = re.findall(r"\bINC-[A-Z0-9]+(?:-[A-Z0-9]+)*\b", text, flags=re.IGNORECASE)
+            incident_ids = re.findall(r"\bIncident\s+([A-Z0-9][A-Z0-9._/-]{1,79})\b", text, flags=re.IGNORECASE)
         if not incident_ids:
+            incident_ids = re.findall(r"\bINC-[A-Z0-9][A-Z0-9._/-]{1,79}\b", text, flags=re.IGNORECASE)
+        if not incident_ids:
+            if len(anonymous) < 2:
+                anonymous.append(text[:400].rstrip())
             continue
         incident_id = incident_ids[0].upper()
-        if incident_id in examples:
-            continue
-        text = re.sub(r"\s*\|\s*(?:When|Where):\s*[^|]+", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"\s*\|\s*", " ", text).strip()
-        examples[incident_id] = text[:650].rstrip()
-        if len(examples) == 2:
-            break
+        examples.setdefault(incident_id, [])
+        if len(examples[incident_id]) < 3:
+            examples[incident_id].append(text[:400].rstrip())
     if not examples:
-        return "No clearly identified past incident matched. Treat this as a new incident."
-    return "\n\n".join(f"{incident_id}: {summary}" for incident_id, summary in examples.items())
+        if not anonymous:
+            return "No clearly identified past incident matched. Treat this as a new incident."
+        return "\n\n".join(f"Saved team memory: {summary}" for summary in anonymous)
+    formatted = [f"{incident_id}: " + " ".join(facts) for incident_id, facts in list(examples.items())[:3]]
+    formatted.extend(f"Saved team memory: {summary}" for summary in anonymous)
+    return "\n\n".join(formatted)
 
 
 def reflect_mitigation(args: ReflectMitigationInput) -> str:

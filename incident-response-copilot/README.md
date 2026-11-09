@@ -9,7 +9,7 @@ This MVP targets the hackathon's Engineering and DevOps incident response idea. 
 - After the operator confirms a resolution, the agent records the postmortem so the next similar incident starts with better context.
 - Historical actions are treated as precedent, not as authorization to repeat a risky change.
 
-The public interactive demo uses synthetic incidents in `hh3-incident-response`. The Login link opens a command dashboard backed by the separate `echo-live-incidents` Hindsight bank. It starts with no cases and learns only from outcomes explicitly confirmed and saved by an operator. From the dashboard, a responder can open the live incident workspace. Rock investigates; Salt independently reviews safety. These are two Hindsight-backed response roles in this web app; the separate Band.ai Rock and Salt examples remain Tom-and-Jerry roleplay agents and are not called by the web app. Echo does not connect to production systems or execute changes.
+The public interactive demo uses synthetic incidents in `hh3-incident-response`. The Login link opens a command dashboard backed by the separate `echo-live-incidents` Hindsight bank. It starts empty and learns only from outcomes an operator confirms and saves. In the live workspace, Echo compares the report with confirmed team cases, sends the incident details and up to three relevant case summaries to the real Rock and Salt agents in Band, and shows their live investigation and safety review. Rock identifies similarities without assuming the cause is the same; Salt checks proposed steps against the operator's constraints. Neither agent has production access or can run a change. Hindsight and Band credentials stay on the server.
 
 ## Setup
 
@@ -26,19 +26,13 @@ The public interactive demo uses synthetic incidents in `hh3-incident-response`.
 
    .venv/bin/python web_api.py
 
-   Open http://127.0.0.1:8000. “See the workflow” opens a prepared, plain-language walkthrough using fictional example prompts and answers. “Try a live demo” takes you to the editable incident form, which sends the incident to Hindsight from the server. The API key stays in .env and is never sent to the browser. The demo bank contains four synthetic incidents, not company data. The save-resolution form writes to memory only after the operator checks the confirmation box.
+   Open http://127.0.0.1:8000. “See the workflow” opens a prepared, plain-language walkthrough using fictional example prompts and answers. “Try a live demo” takes you to the editable incident form, which searches Hindsight and asks Rock and Salt for live reviews. The Hindsight and Band user keys stay in `.env` and are never sent to the browser. The demo bank contains fictional incidents, separate from the live team bank. The save-resolution form writes to memory only after the operator checks the confirmation box. When Band credentials and `rock-salt-agents/agent_config.yaml` are configured, the web server starts both Band workers automatically.
 
-   The top “Login” link opens http://127.0.0.1:8000/dashboard.html. The dashboard reads live Hindsight memory counts and recent verified outcomes. Its incident workspace is http://127.0.0.1:8000/workspace.html. These pages are a prototype, not user authentication. They search only the separate `echo-live-incidents` bank. Add cases over time through the operator-confirmed save form; do not seed demo data into that bank. The page’s Rock and Salt names refer to two separate Hindsight-backed review roles, not the Band.ai roleplay agents.
+   The top “Login” link opens http://127.0.0.1:8000/dashboard.html. The dashboard reads live Hindsight memory counts and recent verified outcomes. Its incident workspace is http://127.0.0.1:8000/workspace.html. These pages are a prototype, not user authentication. They search only the separate `echo-live-incidents` bank. Add cases over time through the operator-confirmed save form; do not seed demo data into that bank. For live reviews, `BAND_USER_API_KEY`, `BAND_ROCK_AGENT_ID`, and `BAND_SALT_AGENT_ID` must be set in the server environment. The web server starts both Band workers automatically. `rock-salt-agents/rock_agent.py` and `salt_agent.py` use the Codex CLI in read-only mode. On macOS, set `CODEX_CLI_PATH` if it is not on PATH. If either agent is offline or fails, Echo shows an error instead of presenting a sample response as live.
 
-   Sidebar features open dedicated pages: `/memory.html` searches confirmed team cases and lets an operator add one sanitized, approved past incident at a time, `/review.html` runs the Rock and Salt review live, and `/outcomes.html` records a verified result and shows recent saved outcomes. Each page links to the next step in the incident workflow. The memory form requires an explicit approval checkbox and rejects duplicate incident references. In the live incident workspace, a responder can start with an incident ID: Echo checks exact Hindsight history first, then tries a read-only GitHub Issue lookup when the ID is numeric. Set `GITHUB_REPOSITORY=owner/repository` to choose the incident repository. Public repositories need no token; for private repositories, `GITHUB_TOKEN` must have read-only Issues permission. Issue descriptions are sent to Hindsight for analysis but never saved as team memory automatically. Confirm a resolution before saving it.
+   Sidebar features open dedicated pages: `/memory.html` searches confirmed team cases and lets an operator add one sanitized, approved past incident at a time, `/review.html` runs the live Band review, and `/outcomes.html` records a verified result and shows recent saved outcomes. Each page links to the next step in the incident workflow. The memory form requires explicit approval and rejects duplicate incident references. In the live incident workspace, a responder can start with an incident ID: Echo checks exact Hindsight history first, then tries a read-only GitHub Issue lookup when the ID is numeric. Set `GITHUB_REPOSITORY=owner/repository` to choose the incident repository. Public repositories need no token; for private repositories, `GITHUB_TOKEN` must have read-only Issues permission. Issue descriptions are sent to Hindsight and Rock/Salt for that review but never saved as team memory automatically. Confirm a resolution before saving it.
 
-5. To use the Band.ai agent as well, start it in a second terminal:
-
-   .venv/bin/python incident_agent.py
-
-The Codex CLI must be authenticated on this machine. In Band.ai, open a chat with Rock and ask about a current incident.
-
-The Band agent uses the existing Rock identity and runs with a read-only Codex sandbox. Its Hindsight tool can store memories, but it cannot change production systems. Run seed_demo_data.py once per fresh memory bank; it adds synthetic records to Hindsight.
+The Codex CLI must be installed and authenticated on this machine. Both workers use read-only mode and do not have production tools. Run `seed_demo_data.py` only for the separate fictional demo bank; never seed those examples into the live team bank.
 
 ## 60-second demo
 
@@ -56,3 +50,11 @@ For a clean memory-before/memory-after comparison, create a fresh Hindsight bank
 - Record a short demo video using the flow above.
 - Prepare a live Band.ai demo and explain exactly where Hindsight retain, recall, and reflect appear.
 - Complete the article, social post, and video requested by the hackathon content guide.
+
+## Evaluation evidence
+
+- **Innovation:** Echo compares symptoms, service, and impact across IDs and wording. The eraser-delivery example surfaces the saved pencil-delivery case while making clear that a similar report does not prove the cause is the same.
+- **Hindsight memory:** the live bank begins empty, verified outcomes require operator confirmation, and future searches use those saved lessons. Fictional demo records stay in a separate bank.
+- **Technical implementation:** live responses fail clearly when Band is unavailable instead of falling back to fabricated text; numeric case lookup is read-only GitHub Issues access; credentials remain server-side; duplicate saved IDs are rejected.
+- **User experience:** responders can start fresh or investigate an existing case, provide only details they know, inspect similar cases and separate Rock/Salt reviews, then save a verified result.
+- **Real-world impact:** teams can add approved post-incident lessons and use them during later response. Production monitoring integrations and real team authentication are future work.
