@@ -75,7 +75,7 @@ class LiveAnalyzeRequest(BaseModel):
 
 
 class MemorySearchRequest(BaseModel):
-    query: str = Field(min_length=4, max_length=2000)
+    query: str = Field(min_length=1, max_length=2000)
 
 
 class ApprovedHistoryRequest(BaseModel):
@@ -143,6 +143,21 @@ def saved_incident_ids(items: list[object]) -> set[str]:
     return {incident_id for item in items if (incident_id := extract_incident_id(item))}
 
 
+async def find_live_incident_facts(incident_id: str) -> list[str]:
+    """Find saved facts by the exact incident ID recorded in Hindsight metadata."""
+    items, _, _ = await list_live_memory_items()
+    facts: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        if extract_incident_id(item) != incident_id.strip().upper():
+            continue
+        fact = " ".join((item.text or "").split())
+        if fact and fact not in seen:
+            seen.add(fact)
+            facts.append(fact[:900])
+    return facts[:5]
+
+
 @app.get("/api/live/dashboard")
 async def live_dashboard_summary() -> dict[str, object]:
     """Show real, minimal counts from the separate operator-confirmed bank."""
@@ -183,8 +198,19 @@ async def live_dashboard_summary() -> dict[str, object]:
 async def search_live_memory(payload: MemorySearchRequest) -> dict[str, object]:
     """Search only the real, operator-confirmed incident bank."""
     try:
+        query = payload.query.strip()
+        # Incident references are often numeric or unlike natural-language text.
+        # Check saved metadata first so an exact ID still works when Hindsight's
+        # semantic recall does not return the incident as a labeled sentence.
+        if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,79}", query):
+            exact_facts = await find_live_incident_facts(query)
+            if exact_facts:
+                return {
+                    "matches": exact_facts[:5],
+                    "message": f"Found saved details for {query}. Check that this is the same incident before using them.",
+                }
         result = await arecall_incidents(
-            RecallIncidentsInput(query=payload.query),
+            RecallIncidentsInput(query=query),
             bank_id=LIVE_BANK_ID,
         )
         if result.startswith("No relevant") or result.startswith("No clearly"):
@@ -284,15 +310,23 @@ async def analyze_incident(payload: AnalyzeRequest) -> dict[str, str]:
 async def analyze_live_incident(payload: LiveAnalyzeRequest) -> dict[str, object]:
     """Run an isolated, current incident review against operator-approved history."""
     try:
-        memories = await arecall_incidents(
-            RecallIncidentsInput(
-                query=(
-                    f"Service: {payload.service or 'not provided'}\nSymptoms: {payload.symptoms or 'not provided'}\n"
-                    f"Recent changes: {payload.recent_changes}"
-                )
-            ),
-            bank_id=LIVE_BANK_ID,
-        )
+        id_only = bool(payload.incident_id.strip()) and not payload.service.strip() and not payload.symptoms.strip()
+        exact_facts = await find_live_incident_facts(payload.incident_id) if payload.incident_id.strip() else []
+        if exact_facts:
+            memories = "\n\n".join(f"{payload.incident_id.strip().upper()}: {fact}" for fact in exact_facts)
+        elif id_only:
+            memories = "No relevant incident memories found. Treat this as a new incident."
+        else:
+            memories = await arecall_incidents(
+                RecallIncidentsInput(
+                    query=(
+                        f"Incident reference: {payload.incident_id or 'not provided'}\n"
+                        f"Service: {payload.service or 'not provided'}\nSymptoms: {payload.symptoms or 'not provided'}\n"
+                        f"Recent changes: {payload.recent_changes}"
+                    )
+                ),
+                bank_id=LIVE_BANK_ID,
+            )
         if memories.startswith("No relevant") or memories.startswith("No clearly"):
             matches: list[str] = []
         else:
