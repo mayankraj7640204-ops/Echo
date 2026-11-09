@@ -13,4 +13,4 @@ dependencies = [
 ]
 
 [tool.setuptools]
-py-modules = ["incident_agent", "setup_memory", "setup_live_memory", "seed_demo_data", "web_api"]
+py-modules = ["incident_agent", "incident_sources", "setup_memory", "setup_live_memory", "seed_demo_data", "web_api"]

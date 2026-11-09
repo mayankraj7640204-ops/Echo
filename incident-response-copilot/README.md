@@ -13,7 +13,7 @@ The public interactive demo uses synthetic incidents in `hh3-incident-response`.
 
 ## Setup
 
-1. Copy .env.example to .env and add a Hindsight Cloud API key. The project uses https://api.hindsight.vectorize.io by default.
+1. Copy .env.example to .env and add a Hindsight Cloud API key. The project uses https://api.hindsight.vectorize.io by default. `GITHUB_REPOSITORY` selects the repository used for numeric issue lookup. Public repositories need no GitHub token; for a private repository, set `GITHUB_TOKEN` to a fine-grained token with read-only Issues access.
 2. The ignored agent_config.yaml is configured to use the existing Rock agent identity on Band.ai.
 3. Install dependencies and create the two separate memory banks (the live team bank starts empty):
 
@@ -30,7 +30,7 @@ The public interactive demo uses synthetic incidents in `hh3-incident-response`.
 
    The top “Login” link opens http://127.0.0.1:8000/dashboard.html. The dashboard reads live Hindsight memory counts and recent verified outcomes. Its incident workspace is http://127.0.0.1:8000/workspace.html. These pages are a prototype, not user authentication. They search only the separate `echo-live-incidents` bank. Add cases over time through the operator-confirmed save form; do not seed demo data into that bank. The page’s Rock and Salt names refer to two separate Hindsight-backed review roles, not the Band.ai roleplay agents.
 
-   Sidebar features open dedicated pages: `/memory.html` searches confirmed team cases and lets an operator add one sanitized, approved past incident at a time, `/review.html` runs the Rock and Salt review live, and `/outcomes.html` records a verified result and shows recent saved outcomes. Each page links to the next step in the incident workflow. The memory form requires an explicit approval checkbox and rejects duplicate incident references. In the live incident workspace, a responder can start with only an incident ID. Echo checks that exact reference against saved team history; if no match exists, it explains that the ID alone cannot reveal the current service or impact and asks for one detail. Ticketing and monitoring integrations are not connected yet.
+   Sidebar features open dedicated pages: `/memory.html` searches confirmed team cases and lets an operator add one sanitized, approved past incident at a time, `/review.html` runs the Rock and Salt review live, and `/outcomes.html` records a verified result and shows recent saved outcomes. Each page links to the next step in the incident workflow. The memory form requires an explicit approval checkbox and rejects duplicate incident references. In the live incident workspace, a responder can start with an incident ID: Echo checks exact Hindsight history first, then tries a read-only GitHub Issue lookup when the ID is numeric. Set `GITHUB_REPOSITORY=owner/repository` to choose the incident repository. Public repositories need no token; for private repositories, `GITHUB_TOKEN` must have read-only Issues permission. Issue descriptions are sent to Hindsight for analysis but never saved as team memory automatically. Confirm a resolution before saving it.
 
 5. To use the Band.ai agent as well, start it in a second terminal:
 
